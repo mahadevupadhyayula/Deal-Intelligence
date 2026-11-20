@@ -1,5 +1,9 @@
 # Architecture
 
+## Glossary: tenant vs. lead
+
+`tenant_id` is the **account that owns a row**; it is an isolation and access-control key, not a description of a company. Leads, ICP segments, research results and ICP evaluations are all data *owned by* a tenant and carry that tenant's `tenant_id`. A lead's own identity is separate (`lead_id`, domain, company name). A lead is never a tenant. If a lead converts into a customer, it becomes a **new** tenant with its own `tenant_id`; the owning tenant's lead row links to it through a separate field (e.g. `converted_tenant_id`), so one tenant's data never mixes with another's.
+
 ## 1. Core Agents
 
 All agents are LangGraph graphs run inside ARQ workers. Every run is keyed by `thread_id = "{tenant_id}:{deal_id}:{run_id}"`.

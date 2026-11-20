@@ -15,6 +15,7 @@ Multi-tenant B2B SaaS of cooperating agents that research leads, clean CRM data 
 
 1. **Never block FastAPI.** Request handlers validate, then enqueue to Redis (ARQ) / SQS and return a job id. Agent runs happen in `workers/`.
 2. **`tenant_id` everywhere.** Required on every DB query, every vector-search metadata filter, and embedded in every LangGraph `thread_id` (e.g. `"{tenant_id}:{deal_id}:{run_id}"`). No query path may omit it.
+   - **Glossary:** `tenant_id` is the account that owns a row. Leads, ICPs, research and evaluations are data *owned by* a tenant; a lead is never a tenant. If a lead later becomes a customer, it gets its own new `tenant_id`, linked from the lead via a separate field (e.g. `converted_tenant_id`); never reuse `tenant_id` for that link.
 3. **Stateless HITL.** Human approval pauses use LangGraph `interrupt` + `PostgresSaver`. No in-process memory of paused runs; any worker can resume any thread.
 4. **Zero hardcoded secrets.** All config via environment / `pydantic-settings`; `.env` is git-ignored; `.env.example` documents keys.
 
