@@ -88,6 +88,8 @@ def clean_tenant_rows(admin_url):
     def wipe():
         with psycopg.connect(admin_url) as c:
             c.execute("DELETE FROM jobs WHERE tenant_id IN (%s, %s)", (TENANT_A, TENANT_B))
+            c.execute("DELETE FROM lead_icp_evaluations WHERE tenant_id IN (%s, %s)", (TENANT_A, TENANT_B))
+            c.execute("DELETE FROM leads WHERE tenant_id IN (%s, %s)", (TENANT_A, TENANT_B))
             c.execute("DELETE FROM icp_segments WHERE tenant_id IN (%s, %s)", (TENANT_A, TENANT_B))
             c.execute("DELETE FROM api_keys WHERE tenant_id IN (%s, %s)", (TENANT_A, TENANT_B))
     wipe()

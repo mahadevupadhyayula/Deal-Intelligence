@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from psycopg_pool import AsyncConnectionPool
 
 from agents.config import get_settings
-from api.routes import health, icp, jobs
+from api.routes import health, icp, jobs, leads
 
 
 def create_app(pool: AsyncConnectionPool | None = None, arq=None) -> FastAPI:
@@ -44,6 +44,7 @@ def create_app(pool: AsyncConnectionPool | None = None, arq=None) -> FastAPI:
     app.include_router(health.router)
     app.include_router(jobs.router)
     app.include_router(icp.router)
+    app.include_router(leads.router)
     return app
 
 

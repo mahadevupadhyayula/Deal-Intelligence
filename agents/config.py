@@ -27,6 +27,20 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     job_payload_max_bytes: int = 65536
 
+    # --- Lead research (Spec 005) ---
+    llm_model: str | None = None  # "<provider>:<model>", e.g. anthropic:claude-sonnet-5-5
+    tavily_api_key: SecretStr | None = None
+    research_max_searches: int = 8
+    research_max_llm_calls: int = 8  # retries included
+    research_max_refine_loops: int = 1
+    research_max_sources: int = 8
+    research_source_char_limit: int = 6000
+    research_max_total_chars: int = 40000
+    research_retry_attempts: int = 2
+    research_retry_backoff_seconds: float = 1.0
+    research_run_timeout_seconds: float = 270  # inner limit, below ARQ's
+    job_timeout_seconds: int = 300  # ARQ's outer limit
+
 
 @lru_cache
 def get_settings() -> Settings:

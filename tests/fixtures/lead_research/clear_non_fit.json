@@ -1,0 +1,109 @@
+{
+  "name": "clear_non_fit",
+  "description": "In-house team, 3000 staff: nothing fits.",
+  "icp": "icp_mini.json",
+  "input": {
+    "lead_id": "l2",
+    "company_name": "Globex Retail",
+    "domain": "globex.example"
+  },
+  "config": {},
+  "search": {
+    "by_query": {
+      "Globex Retail team": [
+        {
+          "url": "https://globex.example/about",
+          "title": "Globex Retail",
+          "content": "Globex Retail runs an in-house RevOps team for its retail brand. About 3000 employees work across stores."
+        }
+      ],
+      "Globex Retail size": [
+        {
+          "url": "https://globex.example/about",
+          "title": "Globex Retail",
+          "content": "Globex Retail runs an in-house RevOps team for its retail brand. About 3000 employees work across stores."
+        }
+      ]
+    },
+    "default": []
+  },
+  "llm": {
+    "plans": [
+      {
+        "queries": [
+          "Globex Retail team",
+          "Globex Retail size"
+        ]
+      }
+    ],
+    "synths": [
+      {
+        "industry": "Retail",
+        "signals": [],
+        "metrics": {
+          "employee_count": {
+            "value": 3000,
+            "evidence": [
+              {
+                "url": "https://globex.example/about",
+                "quote": "About 3000 employees"
+              }
+            ]
+          }
+        },
+        "judgements": {
+          "c1": {
+            "grade": "none",
+            "evidence": [
+              {
+                "url": "https://globex.example/about",
+                "quote": "in-house RevOps team"
+              }
+            ],
+            "rationale": "in-house"
+          }
+        }
+      }
+    ]
+  },
+  "expect": {
+    "nodes": [
+      "load_icp",
+      "resolve_entity",
+      "plan_queries",
+      "search",
+      "synthesize",
+      "validate",
+      "score",
+      "persist"
+    ],
+    "queries": [
+      "Globex Retail team",
+      "Globex Retail size"
+    ],
+    "status": "complete",
+    "flags": [],
+    "entity_confirmed": true,
+    "llm_calls": 2,
+    "searches": 2,
+    "tier": "not_fit",
+    "score": 0.0,
+    "best_segment_key": "primary-seg",
+    "best_rank": "primary",
+    "segments": {
+      "primary-seg": {
+        "score": 0.0,
+        "tier": "not_fit"
+      },
+      "secondary-seg": {
+        "score": 0.0,
+        "tier": "not_fit"
+      }
+    },
+    "profile": {
+      "employee_count": 3000,
+      "domain": "globex.example",
+      "source_count": 1
+    }
+  }
+}

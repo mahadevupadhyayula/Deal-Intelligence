@@ -125,7 +125,8 @@ def test_no_blocking_calls_in_async_paths():
     """Static guard for 'never block FastAPI': no sync DB/sleep/HTTP in api/ or workers/."""
     forbidden = ["psycopg.connect(", "time.sleep(", "requests.", "TenantSession(conn", "import requests"]
     root = Path(__file__).resolve().parent.parent
-    for path in [*root.glob("api/**/*.py"), *root.glob("workers/**/*.py")]:
+    for path in [*root.glob("api/**/*.py"), *root.glob("workers/**/*.py"),
+                 *root.glob("agents/lead_research/**/*.py")]:
         text = path.read_text()
         for bad in forbidden:
             # AsyncTenantSession contains the substring "TenantSession(conn"; allow it.

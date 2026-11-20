@@ -8,6 +8,7 @@ contracts easy to find and keeps the dependency direction one-way.
 from agents.schemas.base import TenantModel
 from agents.schemas.conflict import ConflictItem
 from agents.schemas.deal import DealState
+from agents.schemas.evaluation import IcpEvaluation, StoredVerdict
 from agents.schemas.handoff import HandoffBrief
 from agents.schemas.icp import (
     CriterionVerdict,
@@ -20,6 +21,17 @@ from agents.schemas.job import JobRecord
 from agents.schemas.lead import LeadProfile
 
 __all__ = [
-    "ConflictItem", "CriterionVerdict", "DealState", "HandoffBrief", "IcpResult", "IcpSegment",
-    "IcpSegmentIn", "JobRecord", "LeadProfile", "SegmentScore", "TenantModel",
+    "ConflictItem",
+    "CriterionVerdict",
+    "DealState",
+    "HandoffBrief",
+    "IcpEvaluation",
+    "IcpResult",
+    "IcpSegment",
+    "IcpSegmentIn",
+    "JobRecord",
+    "LeadProfile",
+    "SegmentScore",
+    "StoredVerdict",
+    "TenantModel",
 ]

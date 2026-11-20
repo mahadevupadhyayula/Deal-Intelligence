@@ -1,6 +1,6 @@
 # Spec 005 — Lead Research Agent with ICP Evaluation (LangGraph)
 
-**Status:** Draft (revised after review: evidence verification, entity check, bounded cost, timeouts)
+**Status:** Implemented; Gates 1 and 2 pass, **Gate 3 BLOCKED** (needs live Tavily, LLM and LangSmith credentials)
 **Phase:** 2 · **Depends on:** 001, 002, 003, 004
 
 ## Objective
@@ -119,31 +119,31 @@ Each case: input, segments (from `docs/examples/icp/primary_hubspot_consultancy.
 ## 3-Gate Verification & Acceptance Criteria
 
 ### Gate 1 — Unit (`pytest -v`)
-- [ ] Config: new settings load with defaults; `tavily_api_key` is a `SecretStr`, absent from `repr`
-- [ ] `TavilySearch` (HTTP mocked): maps results, applies timeout; transient errors retried with backoff then succeed; retries exhausted ⇒ `SearchError`; permanent errors not retried. Same retry behaviour for the LLM wrapper; retries count toward the budget
-- [ ] `ResearchFindings`/`LeadResearchInput`/`IcpEvaluation` reject unknown fields and bad values; **the LLM-facing JSON schema contains no `tenant_id` and no segment keys**
-- [ ] Validate: foreign/unnormalised URLs handled; a quote not present in the cited source is dropped; a non-`unknown` judgement (including `none`) with no verified evidence becomes `unknown`; a metric value with no verified evidence becomes `None`; skipped keys become `unknown`; unrequested keys discarded; per-segment `StoredVerdict`s carry the job's tenant
-- [ ] Criterion dedupe: identical judged criteria across segments share one key and one judgement; one `employee_count` metric feeds every segment's size bands and the profile
-- [ ] Entity check: confirmed/unconfirmed cases; unconfirmed ⇒ overall tier `insufficient_data` + `entity_unconfirmed` flag; `resolve_entity` picks the right host and rejects results that do not mention the company
-- [ ] Scoring amendment: `assume_unknown` none/ideal produce the expected bounds; default behaviour unchanged (all Spec 004 tests still pass)
-- [ ] Refine decision: bounds differ ⇒ refine; bounds equal (only low-weight unknowns) ⇒ no refine; caps respected
-- [ ] Prompt caps: at most `research_max_sources` sources and `research_max_total_chars` sent; untrusted wrapping on every source; budget guard ⇒ `status="partial"`
-- [ ] Profile confidence formula: boundary cases match expected numbers
-- [ ] `AsyncLeadRepo` / `AsyncEvaluationRepo`: round-trip; history retained; latest ordering; persisting the same `job_id` twice is a no-op; tenant B cannot read or write tenant A's rows (RLS, as `app_user`); `list_latest` filters by tier and paginates stably
-- [ ] Handler: valid job persists profile + evaluation under the **job's** tenant only, recording segment versions; no active ICP ⇒ `failed` with the message; invalid payload ⇒ `failed`; **inner timeout marks the job `failed: timed out`**; amended `echo` and all Spec 003 tests still pass
-- [ ] Read API: `401`; own lead `200`; cross-tenant `404`; list endpoint filters/sorts/paginates; bad params `422`
-- [ ] **API isolation:** importing `api.main` in a fresh interpreter does not import `langgraph` or `langchain`
-- [ ] No blocking calls in async paths (static guard extended to `agents/lead_research/` and `workers/`)
+- [x] Config: new settings load with defaults; `tavily_api_key` is a `SecretStr`, absent from `repr`
+- [x] `TavilySearch` (HTTP mocked): maps results, applies timeout; transient errors retried with backoff then succeed; retries exhausted ⇒ `SearchError`; permanent errors not retried. Same retry behaviour for the LLM wrapper; retries count toward the budget
+- [x] `ResearchFindings`/`LeadResearchInput`/`IcpEvaluation` reject unknown fields and bad values; **the LLM-facing JSON schema contains no `tenant_id` and no segment keys**
+- [x] Validate: foreign/unnormalised URLs handled; a quote not present in the cited source is dropped; a non-`unknown` judgement (including `none`) with no verified evidence becomes `unknown`; a metric value with no verified evidence becomes `None`; skipped keys become `unknown`; unrequested keys discarded; per-segment `StoredVerdict`s carry the job's tenant
+- [x] Criterion dedupe: identical judged criteria across segments share one key and one judgement; one `employee_count` metric feeds every segment's size bands and the profile
+- [x] Entity check: confirmed/unconfirmed cases; unconfirmed ⇒ overall tier `insufficient_data` + `entity_unconfirmed` flag; `resolve_entity` picks the right host and rejects results that do not mention the company
+- [x] Scoring amendment: `assume_unknown` none/ideal produce the expected bounds; default behaviour unchanged (all Spec 004 tests still pass)
+- [x] Refine decision: bounds differ ⇒ refine; bounds equal (only low-weight unknowns) ⇒ no refine; caps respected
+- [x] Prompt caps: at most `research_max_sources` sources and `research_max_total_chars` sent; untrusted wrapping on every source; budget guard ⇒ `status="partial"`
+- [x] Profile confidence formula: boundary cases match expected numbers
+- [x] `AsyncLeadRepo` / `AsyncEvaluationRepo`: round-trip; history retained; latest ordering; persisting the same `job_id` twice is a no-op; tenant B cannot read or write tenant A's rows (RLS, as `app_user`); `list_latest` filters by tier and paginates stably
+- [x] Handler: valid job persists profile + evaluation under the **job's** tenant only, recording segment versions; no active ICP ⇒ `failed` with the message; invalid payload ⇒ `failed`; **inner timeout marks the job `failed: timed out`**; amended `echo` and all Spec 003 tests still pass
+- [x] Read API: `401`; own lead `200`; cross-tenant `404`; list endpoint filters/sorts/paginates; bad params `422`
+- [x] **API isolation:** importing `api.main` in a fresh interpreter does not import `langgraph` or `langchain`
+- [x] No blocking calls in async paths (static guard extended to `agents/lead_research/` and `workers/`)
 
 ### Gate 2 — Agent Behavior (golden datasets)
-- [ ] For every fixture case: node sequence, search queries, final profile and evaluation (tier, score, per-criterion verdicts, flags) equal the golden expectations
-- [ ] `strong_primary_fit`, `strong_secondary_fit` (best segment = secondary), `clear_non_fit`, `disqualifier_hit` (tier `not_fit`, score 0, criterion listed, single-source flag), `insufficient_data` yield the expected results
-- [ ] `sparse_needs_refine` loops exactly once and second-pass queries target only unknown criteria; `refine_skipped_when_tier_fixed` does not loop; `budget_exhausted` ends `partial` without exceeding caps; `no_results` ends `insufficient_data` with an empty profile persisted
-- [ ] `quote_not_in_source`, `verdict_without_evidence`, `numeric_without_evidence` all end as `unknown` and cannot raise the score
-- [ ] `entity_unconfirmed` ⇒ `insufficient_data`; `llm_transient_error_retry` succeeds within the budget; `run_timeout` ⇒ job `failed`, not stuck `running`
-- [ ] `injection_attempt`: no injected fields/URLs in output, score computed by code, normal trajectory only (structural defence; see §5 limit)
-- [ ] `no_active_icp`: job fails before any search or LLM call
-- [ ] Two-tenant run: separate ICPs and results, no cross-tenant data in state or DB; `thread_id = tenant:lead:job`
+- [x] For every fixture case: node sequence, search queries, final profile and evaluation (tier, score, per-criterion verdicts, flags) equal the golden expectations
+- [x] `strong_primary_fit`, `strong_secondary_fit` (best segment = secondary), `clear_non_fit`, `disqualifier_hit` (tier `not_fit`, score 0, criterion listed, single-source flag), `insufficient_data` yield the expected results
+- [x] `sparse_needs_refine` loops exactly once and second-pass queries target only unknown criteria; `refine_skipped_when_tier_fixed` does not loop; `budget_exhausted` ends `partial` without exceeding caps; `no_results` ends `insufficient_data` with an empty profile persisted
+- [x] `quote_not_in_source`, `verdict_without_evidence`, `numeric_without_evidence` all end as `unknown` and cannot raise the score
+- [x] `entity_unconfirmed` ⇒ `insufficient_data`; `llm_transient_error_retry` succeeds within the budget; `run_timeout` ⇒ job `failed`, not stuck `running`
+- [x] `injection_attempt`: no injected fields/URLs in output, score computed by code, normal trajectory only (structural defence; see §5 limit)
+- [x] `no_active_icp`: job fails before any search or LLM call
+- [x] Two-tenant run: separate ICPs and results, no cross-tenant data in state or DB; `thread_id = tenant:lead:job`
 
 ### Gate 3 — Live Smoke Test (needs `TAVILY_API_KEY`, an LLM provider key, `LANGSMITH_API_KEY`)
 - [ ] Redis + Postgres up, migrations applied, tenant + API key minted, the two example segments loaded via `PUT /v1/icp/segments/{key}`, API and worker running with real adapters
@@ -157,11 +157,18 @@ Each case: input, segments (from `docs/examples/icp/primary_hubspot_consultancy.
 
 ### Definition of Done
 - [ ] All gates pass (Gate 3 requires the credentials below; otherwise it is reported as **blocked**, never Pass); Verification Report (Pass/Fail) output
-- [ ] Docstring rule satisfied in every new file
-- [ ] `docs/build-logs/YYYY-MM-DD-day-XX.md` written; README progress table updated (Spec 005 → Done)
+- [x] Docstring rule satisfied in every new file
+- [x] `docs/build-logs/2026-11-20-day-05.md` written; README progress table updated (Gate 3 reported as blocked)
 
 ## Open Questions (only what needs the owner)
 1. **Gate 3 credentials and model:** which LLM provider/model, and do you have Tavily and LangSmith keys? Without them Gate 3 is blocked.
 2. **Live test companies:** which real HubSpot consultancy should the judgement check use, and (optional) the ~10 labelled companies for the calibration set?
 
 *Resolved in review:* quote verification (yes), list endpoint (included), no-ICP behaviour (fail fast), evaluation history (kept), `JobContext` (amend Spec 003), trace privacy (hashed tenant id).
+
+## Implementation Notes (deviations and caveats)
+- **Retry placement:** retries live in the graph's node layer (`call_with_retries`), not inside the adapters, so each run's budget counters stay per-run (adapters are shared across jobs). Behaviour and tests match the spec.
+- **`official_domain`** exists in `ResearchFindings` but is informational only; entity confirmation never trusts the model's domain claim.
+- **Unverified fields:** `industry` and `signals` are LLM text without quote verification (length-capped); only `employee_count` and the criterion verdicts are evidence-backed.
+- **Untested against real services:** `TavilySearch` (mocked HTTP only) and `LangChainLLM` (fake chat model only). Provider schema compatibility of the dict-keyed `ResearchFindings` (e.g. OpenAI strict structured outputs) is unverified and is a Gate 3 item.
+- **Gate 3 status:** nothing in the live checklist was run; Tavily/LangSmith keys and an LLM model are not configured. The live plumbing that does not need them was checked (migration, API/worker start, unconfigured `lead_research` job fails with a clear message, API process imports no agent libraries).

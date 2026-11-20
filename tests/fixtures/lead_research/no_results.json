@@ -1,0 +1,70 @@
+{
+  "name": "no_results",
+  "description": "Search finds nothing: no synthesis call is made, evaluation is insufficient_data.",
+  "icp": "icp_mini.json",
+  "input": {
+    "lead_id": "l1",
+    "company_name": "Acme Consulting",
+    "domain": "acme-consulting.example"
+  },
+  "config": {},
+  "search": {
+    "by_query": {},
+    "default": []
+  },
+  "llm": {
+    "plans": [
+      {
+        "queries": [
+          "Acme Consulting HubSpot",
+          "Acme Consulting team size"
+        ]
+      },
+      {
+        "queries": [
+          "Acme Consulting staff count"
+        ]
+      }
+    ],
+    "synths": []
+  },
+  "expect": {
+    "nodes": [
+      "load_icp",
+      "resolve_entity",
+      "plan_queries",
+      "search",
+      "synthesize",
+      "validate",
+      "score",
+      "plan_queries",
+      "search",
+      "synthesize",
+      "validate",
+      "score",
+      "persist"
+    ],
+    "queries": [
+      "Acme Consulting HubSpot",
+      "Acme Consulting team size",
+      "Acme Consulting staff count"
+    ],
+    "status": "complete",
+    "flags": [
+      "entity_unconfirmed"
+    ],
+    "entity_confirmed": false,
+    "llm_calls": 2,
+    "searches": 3,
+    "tier": "insufficient_data",
+    "score": 0.0,
+    "best_segment_key": "primary-seg",
+    "best_rank": "primary",
+    "profile": {
+      "employee_count": null,
+      "domain": "acme-consulting.example",
+      "source_count": 0,
+      "confidence": 0.1
+    }
+  }
+}

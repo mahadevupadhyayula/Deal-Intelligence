@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
 from redis.exceptions import RedisError
 
-from agents.jobs import JOB_HANDLERS
+from agents.job_kinds import JOB_KINDS
 from agents.repos.async_session import AsyncTenantSession
 from agents.repos.job import JobRepo
 from agents.schemas.job import JobStatus
@@ -33,7 +33,7 @@ class JobCreate(BaseModel):
     @field_validator("kind")
     @classmethod
     def _known_kind(cls, v: str) -> str:
-        if v not in JOB_HANDLERS:
+        if v not in JOB_KINDS:
             raise ValueError(f"unknown job kind: {v}")
         return v
 

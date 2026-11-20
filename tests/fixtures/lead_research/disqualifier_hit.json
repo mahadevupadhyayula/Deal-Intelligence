@@ -1,0 +1,124 @@
+{
+  "name": "disqualifier_hit",
+  "description": "A disqualifier is clearly present on one source: not_fit, flagged as single-source.",
+  "icp": "icp_mini.json",
+  "input": {
+    "lead_id": "l1",
+    "company_name": "Acme Consulting",
+    "domain": "acme-consulting.example"
+  },
+  "config": {},
+  "search": {
+    "by_query": {
+      "Acme Consulting HubSpot": [
+        {
+          "url": "https://acme-consulting.example/about",
+          "title": "About Acme Consulting",
+          "content": "Acme Consulting is a founder-led HubSpot implementation consultancy based in Austin. Our team of 12 people delivers CRM migrations and RevOps projects for B2B SaaS companies. We are also a global enterprise systems integrator for Fortune 500 clients."
+        }
+      ],
+      "Acme Consulting team size": [
+        {
+          "url": "https://acme-consulting.example/about",
+          "title": "About Acme Consulting",
+          "content": "Acme Consulting is a founder-led HubSpot implementation consultancy based in Austin. Our team of 12 people delivers CRM migrations and RevOps projects for B2B SaaS companies. We are also a global enterprise systems integrator for Fortune 500 clients."
+        }
+      ]
+    },
+    "default": []
+  },
+  "llm": {
+    "plans": [
+      {
+        "queries": [
+          "Acme Consulting HubSpot",
+          "Acme Consulting team size"
+        ]
+      }
+    ],
+    "synths": [
+      {
+        "industry": "HubSpot consultancy",
+        "signals": [
+          "Founder-led"
+        ],
+        "metrics": {
+          "employee_count": {
+            "value": 12,
+            "evidence": [
+              {
+                "url": "https://acme-consulting.example/about",
+                "quote": "Our team of 12 people"
+              }
+            ]
+          }
+        },
+        "judgements": {
+          "c1": {
+            "grade": "ideal",
+            "evidence": [
+              {
+                "url": "https://acme-consulting.example/about",
+                "quote": "founder-led HubSpot implementation consultancy"
+              }
+            ],
+            "rationale": "stated on About page"
+          },
+          "c2": {
+            "grade": "ideal",
+            "evidence": [
+              {
+                "url": "https://acme-consulting.example/about",
+                "quote": "global enterprise systems integrator"
+              }
+            ],
+            "rationale": "also an SI"
+          }
+        }
+      }
+    ]
+  },
+  "expect": {
+    "nodes": [
+      "load_icp",
+      "resolve_entity",
+      "plan_queries",
+      "search",
+      "synthesize",
+      "validate",
+      "score",
+      "persist"
+    ],
+    "queries": [
+      "Acme Consulting HubSpot",
+      "Acme Consulting team size"
+    ],
+    "status": "complete",
+    "flags": [
+      "single_source_disqualifier"
+    ],
+    "entity_confirmed": true,
+    "llm_calls": 2,
+    "searches": 2,
+    "tier": "not_fit",
+    "score": 0.0,
+    "best_segment_key": "primary-seg",
+    "best_rank": "primary",
+    "segments": {
+      "primary-seg": {
+        "score": 0.0,
+        "tier": "not_fit",
+        "disqualified_by": [
+          "enterprise-si"
+        ]
+      },
+      "secondary-seg": {
+        "score": 0.0,
+        "tier": "not_fit",
+        "disqualified_by": [
+          "enterprise-si"
+        ]
+      }
+    }
+  }
+}

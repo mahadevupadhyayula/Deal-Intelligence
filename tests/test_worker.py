@@ -7,11 +7,11 @@ tenant's job, and a redelivered message must not re-run finished work.
 """
 from uuid import uuid4
 
-from agents.jobs import JOB_HANDLERS
 from agents.repos.async_session import AsyncTenantSession
 from agents.repos.job import JobRepo
 from tests.conftest import TENANT_A as A
 from tests.conftest import TENANT_B as B
+from workers.handlers import JOB_HANDLERS
 from workers.tasks import run_job
 
 
@@ -53,7 +53,7 @@ async def test_wrong_tenant_cannot_touch_job(apool):
 async def test_duplicate_delivery_is_noop(apool, monkeypatch):
     calls = []
 
-    async def counting(t, j, p):
+    async def counting(ctx, t, j, p):
         calls.append(j)
         return {}
     monkeypatch.setitem(JOB_HANDLERS, "echo", counting)

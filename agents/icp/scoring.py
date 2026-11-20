@@ -12,6 +12,8 @@ trade-offs:
   * Numeric criteria are graded here from `observed_value`; any LLM-supplied grade is ignored.
   * A triggered disqualifier forces `not_fit` regardless of score.
 """
+from typing import Literal
+
 from agents.schemas.icp import (
     GRADE_POINTS,
     CriterionVerdict,
@@ -42,7 +44,12 @@ def _numeric_grade(criterion: NumericCriterion, observed) -> str:
     return best or "none"
 
 
-def score_segment(segment: IcpSegment, verdicts: list[CriterionVerdict]) -> SegmentScore:
+AssumeUnknown = Literal["none", "ideal"] | None
+
+
+def score_segment(
+    segment: IcpSegment, verdicts: list[CriterionVerdict], assume_unknown: AssumeUnknown = None
+) -> SegmentScore:
     by_id = {c.id: c for c in segment.criteria}
     seen: dict[str, CriterionVerdict] = {}
     for v in verdicts:
@@ -67,6 +74,10 @@ def score_segment(segment: IcpSegment, verdicts: list[CriterionVerdict]) -> Segm
     disqualified, unverified = [], []
     for c in segment.criteria:
         grade = grade_of(c)
+        # Bounds mode (Spec 005): pretend unknown SCORING criteria are `none`/`ideal` to see
+        # how far the tier could move. Unknown disqualifiers stay unknown (never triggered).
+        if assume_unknown and grade == "unknown" and c.role == "scoring":
+            grade = assume_unknown
         if c.role == "disqualifier":
             if grade == "unknown":
                 unverified.append(c.id)
@@ -111,7 +122,9 @@ def score_segment(segment: IcpSegment, verdicts: list[CriterionVerdict]) -> Segm
 
 
 def evaluate_segments(
-    segments: list[IcpSegment], verdicts_by_segment: dict[str, list[CriterionVerdict]]
+    segments: list[IcpSegment],
+    verdicts_by_segment: dict[str, list[CriterionVerdict]],
+    assume_unknown: AssumeUnknown = None,
 ) -> IcpResult:
     if not segments:
         raise ValueError("at least one segment is required")
@@ -122,7 +135,7 @@ def evaluate_segments(
 
     # Sort by key first: `max` keeps the first of equal candidates, so ties are deterministic.
     scores = [
-        score_segment(s, verdicts_by_segment.get(s.segment_key, []))
+        score_segment(s, verdicts_by_segment.get(s.segment_key, []), assume_unknown)
         for s in sorted(segments, key=lambda s: s.segment_key)
     ]
 
