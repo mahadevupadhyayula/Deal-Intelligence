@@ -1,7 +1,7 @@
 """ARQ WorkerSettings.
 
 WHAT: Configuration for `arq workers.settings.WorkerSettings`.
-WHERE: Process entry point for workers; KEDA scales its pods on Redis queue depth (Spec 016).
+WHERE: Process entry point for workers; KEDA scales its pods on Redis queue depth (Spec 017).
 WHY: One pool per worker process (opened at startup) shared by all jobs it runs.
 `max_tries=1`: no automatic retries yet (see tasks.py).
 """

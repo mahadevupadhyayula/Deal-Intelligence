@@ -3,7 +3,7 @@
 WHAT: `run_job` loads the job, marks it running, dispatches to the registered handler, and
 records success/failure.
 WHERE: Invoked by the ARQ worker for messages the API enqueued; handlers come from
-`agents/jobs.py` (agents plug in from Spec 004).
+`agents/jobs.py` (agents plug in from Spec 005).
 WHY: The message carries only ids, so the worker re-reads the job under an
 AsyncTenantSession: RLS guarantees a forged/mismatched tenant_id finds nothing. Handler
 failures are recorded, not retried (max_tries=1) until real agents define retry safety.

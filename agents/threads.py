@@ -1,7 +1,7 @@
 """Tenant-safe LangGraph thread ids.
 
 WHAT: Builds/parses `"tenant:deal:run"` thread ids.
-WHERE: Used by workers when invoking LangGraph graphs with `PostgresSaver` (Spec 007+).
+WHERE: Used by workers when invoking LangGraph graphs with `PostgresSaver` (Spec 008+).
 WHY: Checkpoints are keyed by thread_id; embedding tenant_id in it means a resumed
 thread can always be attributed to (and verified against) its tenant. Forbidding ':' in
 parts makes parsing unambiguous and prevents one tenant forging another's prefix.

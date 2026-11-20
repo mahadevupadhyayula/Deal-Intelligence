@@ -30,26 +30,27 @@ Multi-tenant platform where four cooperating agents research leads, clean CRM da
                  └──────────────────────────────────────────────┘
 ```
 
-## Roadmap — 5 Phases / 16 Specs
+## Roadmap — 5 Phases / 17 Specs
 
 | Phase | Spec | Title | Status |
 |-------|------|-------|--------|
 | 1. Foundation | 001 | Foundation: `pyproject`, config, Pydantic schemas, DB + pgvector | Done |
 | 1. Foundation | 002 | Tenant-scoped data layer & migrations | Done |
 | 1. Foundation | 003 | FastAPI skeleton + ARQ enqueue/worker plumbing | Done |
-| 2. Core Agents | 004 | Lead Research agent (LangGraph) | Drafted |
-| 2. Core Agents | 005 | LLM Wiki agent (pgvector ingest + retrieval) | Planned |
-| 2. Core Agents | 006 | CRM Hygiene agent: conflict detection | Planned |
-| 2. Core Agents | 007 | CRM Hygiene HITL: `interrupt` + `PostgresSaver` resume | Planned |
-| 2. Core Agents | 008 | Sales-to-Implementation Handoff agent | Planned |
-| 3. Integrations | 009 | CRM connectors + OAuth token vault | Planned |
-| 3. Integrations | 010 | Webhook ingestion: idempotency & rate limits | Planned |
-| 4. Safety & Quality | 011 | Prompt-injection guardrails | Planned |
-| 4. Safety & Quality | 012 | Golden datasets, trajectory evals, LangSmith | Planned |
-| 4. Safety & Quality | 013 | Streamlit UI: review queue & deal views | Planned |
-| 5. Production | 014 | Docker images + `docker compose` dev stack | Planned |
-| 5. Production | 015 | Terraform: VPC, EKS, RDS, ElastiCache | Planned |
-| 5. Production | 016 | K8s manifests, KEDA autoscaling, observability | Planned |
+| 2. Core Agents | 004 | ICP definition & deterministic scoring | Drafted |
+| 2. Core Agents | 005 | Lead Research agent with ICP evaluation (LangGraph) | Drafted |
+| 2. Core Agents | 006 | LLM Wiki agent (pgvector ingest + retrieval) | Planned |
+| 2. Core Agents | 007 | CRM Hygiene agent: conflict detection | Planned |
+| 2. Core Agents | 008 | CRM Hygiene HITL: `interrupt` + `PostgresSaver` resume | Planned |
+| 2. Core Agents | 009 | Sales-to-Implementation Handoff agent | Planned |
+| 3. Integrations | 010 | CRM connectors + OAuth token vault | Planned |
+| 3. Integrations | 011 | Webhook ingestion: idempotency & rate limits | Planned |
+| 4. Safety & Quality | 012 | Prompt-injection guardrails | Planned |
+| 4. Safety & Quality | 013 | Golden datasets, trajectory evals, LangSmith | Planned |
+| 4. Safety & Quality | 014 | Streamlit UI: ICP editor, review queue & deal views | Planned |
+| 5. Production | 015 | Docker images + `docker compose` dev stack | Planned |
+| 5. Production | 016 | Terraform: VPC, EKS, RDS, ElastiCache | Planned |
+| 5. Production | 017 | K8s manifests, KEDA autoscaling, observability | Planned |
 
 ## Build Progress
 

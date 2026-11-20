@@ -4,7 +4,7 @@
 **Phase:** 1 · **Depends on:** 001, 002
 
 ## Objective
-Stand up the request path every agent will use: an authenticated, tenant-aware FastAPI app that **never runs agent work inline** — it records a job, enqueues it to Redis (ARQ) and returns `202` — plus an ARQ worker that picks the job up under the correct tenant and records its outcome. The worker runs only a stub `echo` handler here; real agents plug into the same registry in Specs 004+.
+Stand up the request path every agent will use: an authenticated, tenant-aware FastAPI app that **never runs agent work inline** — it records a job, enqueues it to Redis (ARQ) and returns `202` — plus an ARQ worker that picks the job up under the correct tenant and records its outcome. The worker runs only a stub `echo` handler here; real agents plug into the same registry in Specs 005+.
 
 ## Technical Requirements
 
@@ -47,10 +47,10 @@ Stand up the request path every agent will use: an authenticated, tenant-aware F
 - WHAT/WHERE/WHY docstring in every new file; SQL header comment in `0003`.
 
 ## Out of Scope
-- Docker images/compose (Spec 014), K8s/KEDA (Spec 016)
-- Real agent handlers (Specs 004–008); LangGraph integration
-- Webhook endpoints, idempotency keys, rate limiting (Spec 010)
-- CRM OAuth / token vault (Spec 009); user login/UI sessions (Spec 013)
+- Docker images/compose (Spec 015), K8s/KEDA (Spec 017)
+- Real agent handlers (Specs 005–009); LangGraph integration
+- Webhook endpoints, idempotency keys, rate limiting (Spec 011)
+- CRM OAuth / token vault (Spec 010); user login/UI sessions (Spec 014)
 - SQS transport (ARQ/Redis only for now); job retries, cancellation, outbox pattern
 - Prometheus metrics / structured logging beyond default
 

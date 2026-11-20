@@ -17,7 +17,7 @@ Create the first real tables and a repository layer where a query without a `ten
 - `leads`, `deals`, `conflicts`, `handoff_briefs`: each has `tenant_id text NOT NULL REFERENCES tenants`, a natural id (`lead_id`, `deal_id`, `conflict_id`), and a `data jsonb` column holding the validated Pydantic JSON plus the few columns we filter on (`stage`, `status`, `risk`, `deal_id`).
 - Primary keys and foreign keys are **composite with `tenant_id`** (e.g. `PRIMARY KEY (tenant_id, deal_id)`, conflicts reference `(tenant_id, deal_id)`), so a cross-tenant reference is rejected by the database itself.
 - Indexes lead with `tenant_id`.
-- Wiki/vector tables are deferred to Spec 005.
+- Wiki/vector tables are deferred to Spec 006.
 
 ### 3. Row-level security (`0002_rls.sql`)
 - `ENABLE` + `FORCE ROW LEVEL SECURITY` on every tenant table; policy: `tenant_id = current_setting('app.tenant_id', true)`.
@@ -37,10 +37,10 @@ Create the first real tables and a repository layer where a query without a `ten
 - WHAT/WHERE/WHY docstring in every new file and an explanatory comment header in each SQL file.
 
 ## Out of Scope
-- Wiki/vector tables and tenant-filtered similarity search (Spec 005)
-- `PostgresSaver` checkpoint tables (Spec 007)
+- Wiki/vector tables and tenant-filtered similarity search (Spec 006)
+- `PostgresSaver` checkpoint tables (Spec 008)
 - Connection pooling, API wiring (Spec 003)
-- OAuth token vault tables (Spec 009), webhook idempotency table (Spec 010)
+- OAuth token vault tables (Spec 010), webhook idempotency table (Spec 011)
 
 ## 3-Gate Verification & Acceptance Criteria
 
