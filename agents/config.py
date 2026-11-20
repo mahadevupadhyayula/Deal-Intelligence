@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     test_admin_database_url: SecretStr | None = None
     app_user_password: SecretStr | None = None
     redis_url: str = "redis://localhost:6379/0"
+    job_payload_max_bytes: int = 65536
 
 
 @lru_cache

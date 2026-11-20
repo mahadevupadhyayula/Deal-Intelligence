@@ -1,6 +1,6 @@
 # Spec 003 — FastAPI Skeleton + ARQ Enqueue/Worker Plumbing
 
-**Status:** Draft
+**Status:** Done
 **Phase:** 1 · **Depends on:** 001, 002
 
 ## Objective
@@ -57,31 +57,31 @@ Stand up the request path every agent will use: an authenticated, tenant-aware F
 ## 3-Gate Verification & Acceptance Criteria
 
 ### Gate 1 — Unit (`pytest -v`)
-- [ ] Auth: missing, malformed, unknown and revoked keys ⇒ `401`; valid key resolves the right tenant; stored value is a hash, not the key
-- [ ] `POST /v1/jobs` (ASGI client, fake enqueue): returns `202`, creates a `queued` row for the caller's tenant, enqueues with args `(tenant_id, job_id)` only
-- [ ] Unknown `kind` ⇒ `422`; oversize payload ⇒ `413`; Redis failure ⇒ `503` and job marked `failed`
-- [ ] **Isolation:** tenant B's key gets `404` for tenant A's `job_id`; `tenant_id` in the body is ignored/rejected
-- [ ] `JobRepo`: valid transitions succeed, invalid ones (e.g. `succeeded→running`) raise; RLS blocks cross-tenant reads/writes (as `app_user`)
-- [ ] `run_job` (called directly, real DB): success path stores result; handler exception ⇒ `failed` + error text; wrong-tenant `job_id` is not found and not touched
-- [ ] `make_thread_id`/`parse_thread_id` round-trip; reject empty parts and `:`
-- [ ] `/healthz` is `200` with no deps; `/readyz` is `503` when a dependency is unavailable
-- [ ] No sync blocking calls in async handlers (checked by review + test using an event-loop-blocking detector or `asyncio` debug slow-callback warning)
+- [x] Auth: missing, malformed, unknown and revoked keys ⇒ `401`; valid key resolves the right tenant; stored value is a hash, not the key
+- [x] `POST /v1/jobs` (ASGI client, fake enqueue): returns `202`, creates a `queued` row for the caller's tenant, enqueues with args `(tenant_id, job_id)` only
+- [x] Unknown `kind` ⇒ `422`; oversize payload ⇒ `413`; Redis failure ⇒ `503` and job marked `failed`
+- [x] **Isolation:** tenant B's key gets `404` for tenant A's `job_id`; `tenant_id` in the body is ignored/rejected
+- [x] `JobRepo`: valid transitions succeed, invalid ones (e.g. `succeeded→running`) raise; RLS blocks cross-tenant reads/writes (as `app_user`)
+- [x] `run_job` (called directly, real DB): success path stores result; handler exception ⇒ `failed` + error text; wrong-tenant `job_id` is not found and not touched
+- [x] `make_thread_id`/`parse_thread_id` round-trip; reject empty parts and `:`
+- [x] `/healthz` is `200` with no deps; `/readyz` is `503` when a dependency is unavailable
+- [x] No sync blocking calls in async handlers (checked by review + test using an event-loop-blocking detector or `asyncio` debug slow-callback warning)
 
 ### Gate 2 — Agent Behavior
-- [ ] **N/A** — only a stub `echo` handler; no LangGraph agents yet
+- [x] **N/A** — only a stub `echo` handler; no LangGraph agents yet
 
 ### Gate 3 — Live Smoke Test
-- [ ] Start Redis (`docker run -d -p 6379:6379 redis:7`), run `python -m agents.migrate`, mint a key with `python -m agents.admin create-api-key tenant-a`
-- [ ] `uvicorn api.main:app` and `arq workers.settings.WorkerSettings` running together
-- [ ] `curl -s -X POST localhost:8000/v1/jobs -H "Authorization: Bearer $KEY" -H 'content-type: application/json' -d '{"kind":"echo","payload":{"hi":1}}'` ⇒ `202` in well under a second with a `job_id`
-- [ ] `curl -s localhost:8000/v1/jobs/$JOB_ID -H "Authorization: Bearer $KEY"` ⇒ eventually `succeeded` with echoed result
-- [ ] With the worker stopped, a `POST` still returns `202` and the job stays `queued` (proves the API doesn't block on work); starting the worker drains it
-- [ ] `psql` as admin: `SELECT tenant_id, status FROM jobs;` shows the job under `tenant-a`
+- [x] Start Redis (`docker run -d -p 6379:6379 redis:7`), run `python -m agents.migrate`, mint a key with `python -m agents.admin create-api-key tenant-a`
+- [x] `uvicorn api.main:app` and `arq workers.settings.WorkerSettings` running together
+- [x] `curl -s -X POST localhost:8000/v1/jobs -H "Authorization: Bearer $KEY" -H 'content-type: application/json' -d '{"kind":"echo","payload":{"hi":1}}'` ⇒ `202` in well under a second with a `job_id`
+- [x] `curl -s localhost:8000/v1/jobs/$JOB_ID -H "Authorization: Bearer $KEY"` ⇒ eventually `succeeded` with echoed result
+- [x] With the worker stopped, a `POST` still returns `202` and the job stays `queued` (proves the API doesn't block on work); starting the worker drains it
+- [x] `psql` as admin: `SELECT tenant_id, status FROM jobs;` shows the job under `tenant-a`
 
 ### Definition of Done
-- [ ] All gates pass; Verification Report (Pass/Fail) output
-- [ ] Docstring rule satisfied in every new file
-- [ ] `docs/build-logs/YYYY-MM-DD-day-XX.md` written; README progress table updated (Spec 003 → Done)
+- [x] All gates pass; Verification Report (Pass/Fail) output
+- [x] Docstring rule satisfied in every new file
+- [x] `docs/build-logs/YYYY-MM-DD-day-XX.md` written; README progress table updated (Spec 003 → Done)
 
 ## Open Questions for Review
 1. **Auth:** hashed per-tenant API keys (recommended — small, real isolation now) vs. a trusted `X-Tenant-ID` header as a placeholder until a real auth spec (not recommended: spoofable).

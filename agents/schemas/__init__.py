@@ -9,6 +9,7 @@ from agents.schemas.base import TenantModel
 from agents.schemas.conflict import ConflictItem
 from agents.schemas.deal import DealState
 from agents.schemas.handoff import HandoffBrief
+from agents.schemas.job import JobRecord
 from agents.schemas.lead import LeadProfile
 
-__all__ = ["ConflictItem", "DealState", "HandoffBrief", "LeadProfile", "TenantModel"]
+__all__ = ["ConflictItem", "DealState", "HandoffBrief", "JobRecord", "LeadProfile", "TenantModel"]
