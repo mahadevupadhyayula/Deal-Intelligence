@@ -35,7 +35,7 @@ Multi-tenant platform where four cooperating agents research leads, clean CRM da
 | Phase | Spec | Title | Status |
 |-------|------|-------|--------|
 | 1. Foundation | 001 | Foundation: `pyproject`, config, Pydantic schemas, DB + pgvector | Done |
-| 1. Foundation | 002 | Tenant-scoped data layer & migrations | Planned |
+| 1. Foundation | 002 | Tenant-scoped data layer & migrations | Drafted |
 | 1. Foundation | 003 | FastAPI skeleton + ARQ enqueue/worker plumbing | Planned |
 | 2. Core Agents | 004 | Lead Research agent (LangGraph) | Planned |
 | 2. Core Agents | 005 | LLM Wiki agent (pgvector ingest + retrieval) | Planned |
