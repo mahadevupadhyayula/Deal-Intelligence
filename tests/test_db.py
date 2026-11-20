@@ -15,7 +15,7 @@ def test_tenant_isolation(db, tenant_table):
 
 def test_rollback_a_writes(db):
     with db.cursor() as cur:
-        cur.execute("CREATE TABLE IF NOT EXISTS _rb_probe (v int)")
+        cur.execute("CREATE TEMP TABLE _rb_probe (v int)")
         cur.execute("INSERT INTO _rb_probe VALUES (1)")
 
 

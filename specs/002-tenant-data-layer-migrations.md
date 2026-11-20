@@ -1,6 +1,6 @@
 # Spec 002 — Tenant-Scoped Data Layer & Migrations
 
-**Status:** Draft
+**Status:** Done
 **Phase:** 1 · **Depends on:** 001
 
 ## Objective
@@ -45,28 +45,28 @@ Create the first real tables and a repository layer where a query without a `ten
 ## 3-Gate Verification & Acceptance Criteria
 
 ### Gate 1 — Unit (`pytest -v`)
-- [ ] Migration runner applies on an empty DB, is idempotent on re-run, and records versions
-- [ ] Round-trip: each model saved and loaded through its repo equals the original
-- [ ] **Isolation:** with tenants A and B seeded, A's session cannot `get`/`list` B's rows, even via crafted ids
-- [ ] **RLS fail-closed:** raw SQL as `app_user` with `app.tenant_id` unset returns 0 rows and INSERT fails
-- [ ] **RLS backstop:** raw `SELECT *` without a `WHERE` under tenant A's session returns only A's rows
-- [ ] Cross-tenant FK: inserting a conflict for tenant A pointing at tenant B's deal fails
-- [ ] `TenantMismatchError` raised when a model's `tenant_id` ≠ session's
-- [ ] Setting is transaction-local: after commit, a reused connection sees no tenant
-- [ ] Tests run as `app_user` and roll back via the Spec 001 fixtures
+- [x] Migration runner applies on an empty DB, is idempotent on re-run, and records versions
+- [x] Round-trip: each model saved and loaded through its repo equals the original
+- [x] **Isolation:** with tenants A and B seeded, A's session cannot `get`/`list` B's rows, even via crafted ids
+- [x] **RLS fail-closed:** raw SQL as `app_user` with `app.tenant_id` unset returns 0 rows and INSERT fails
+- [x] **RLS backstop:** raw `SELECT *` without a `WHERE` under tenant A's session returns only A's rows
+- [x] Cross-tenant FK: inserting a conflict for tenant A pointing at tenant B's deal fails
+- [x] `TenantMismatchError` raised when a model's `tenant_id` ≠ session's
+- [x] Setting is transaction-local: after commit, a reused connection sees no tenant
+- [x] Tests run as `app_user` and roll back via the Spec 001 fixtures
 
 ### Gate 2 — Agent Behavior
-- [ ] **N/A** — no agents in this spec
+- [x] **N/A** — no agents in this spec
 
 ### Gate 3 — Live Smoke Test
-- [ ] `python -m agents.migrate` against a fresh database, then `psql "$ADMIN_DATABASE_URL" -c "\dt"` lists `tenants, leads, deals, conflicts, handoff_briefs, schema_migrations`
-- [ ] `psql "$ADMIN_DATABASE_URL" -c "SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class WHERE relname IN ('leads','deals','conflicts','handoff_briefs');"` shows `t | t` for all four
-- [ ] As `app_user` via `psql`: `SELECT count(*) FROM deals;` with no tenant set returns 0 while the admin role sees seeded rows
+- [x] `python -m agents.migrate` against a fresh database, then `psql "$ADMIN_DATABASE_URL" -c "\dt"` lists `tenants, leads, deals, conflicts, handoff_briefs, schema_migrations`
+- [x] `psql "$ADMIN_DATABASE_URL" -c "SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class WHERE relname IN ('leads','deals','conflicts','handoff_briefs');"` shows `t | t` for all four
+- [x] As `app_user` via `psql`: `SELECT count(*) FROM deals;` with no tenant set returns 0 while the admin role sees seeded rows
 
 ### Definition of Done
-- [ ] All gates pass; Verification Report (Pass/Fail) output
-- [ ] Docstring rule satisfied in every new file
-- [ ] `docs/build-logs/YYYY-MM-DD-day-XX.md` written; README progress table updated (Spec 002 → Done)
+- [x] All gates pass; Verification Report (Pass/Fail) output
+- [x] Docstring rule satisfied in every new file
+- [x] `docs/build-logs/YYYY-MM-DD-day-XX.md` written; README progress table updated (Spec 002 → Done)
 
 ## Open Questions for Review
 1. Plain SQL runner vs Alembic (recommended: plain SQL).

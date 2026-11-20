@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     # Passwords live inside the URL, so treat the whole URL as secret.
     database_url: SecretStr  # required: no default on purpose
     test_database_url: SecretStr | None = None
+    # Admin role: runs migrations / seeds tenants. The app never uses it.
+    admin_database_url: SecretStr | None = None
+    test_admin_database_url: SecretStr | None = None
+    app_user_password: SecretStr | None = None
     redis_url: str = "redis://localhost:6379/0"
 
 
