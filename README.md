@@ -34,7 +34,7 @@ Multi-tenant platform where four cooperating agents research leads, clean CRM da
 
 | Phase | Spec | Title | Status |
 |-------|------|-------|--------|
-| 1. Foundation | 001 | Foundation: `pyproject`, config, Pydantic schemas, DB + pgvector | Drafted |
+| 1. Foundation | 001 | Foundation: `pyproject`, config, Pydantic schemas, DB + pgvector | Done |
 | 1. Foundation | 002 | Tenant-scoped data layer & migrations | Planned |
 | 1. Foundation | 003 | FastAPI skeleton + ARQ enqueue/worker plumbing | Planned |
 | 2. Core Agents | 004 | Lead Research agent (LangGraph) | Planned |
@@ -55,7 +55,7 @@ Multi-tenant platform where four cooperating agents research leads, clean CRM da
 
 | Date | Day | Spec | Gate 1 | Gate 2 | Gate 3 | Log |
 |------|-----|------|--------|--------|--------|-----|
-| — | — | — | — | — | — | — |
+| 2026-11-20 | 01 | 001 | PASS (16) | N/A | PASS | [log](docs/build-logs/2026-11-20-day-01.md) |
 
 ## Workflow
 

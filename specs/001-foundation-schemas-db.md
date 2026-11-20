@@ -1,6 +1,6 @@
 # Spec 001 — Foundation: Project Config, Core Schemas, Database
 
-**Status:** Draft
+**Status:** Done
 **Phase:** 1 · **Depends on:** none
 
 ## Objective
@@ -46,21 +46,21 @@ All models inherit a `TenantModel` base in `agents/schemas/base.py` with require
 ## 3-Gate Verification & Acceptance Criteria
 
 ### Gate 1 — Unit (`pytest -v`)
-- [ ] Each model rejects missing/empty `tenant_id`, unknown fields, and out-of-range values (`confidence`, `risk`)
-- [ ] `DealState` rejects nested `LeadProfile`/`ConflictItem` with a different `tenant_id`
-- [ ] Models round-trip through `model_dump_json` / `model_validate_json`
-- [ ] `Settings` fails loudly when `DATABASE_URL` is missing; secrets do not appear in `repr`
-- [ ] DB isolation test: rows inserted for tenant A are never returned by a tenant-B-filtered query
-- [ ] Rollback fixture: data written in one test is absent in the next
+- [x] Each model rejects missing/empty `tenant_id`, unknown fields, and out-of-range values (`confidence`, `risk`)
+- [x] `DealState` rejects nested `LeadProfile`/`ConflictItem` with a different `tenant_id`
+- [x] Models round-trip through `model_dump_json` / `model_validate_json`
+- [x] `Settings` fails loudly when `DATABASE_URL` is missing; secrets do not appear in `repr`
+- [x] DB isolation test: rows inserted for tenant A are never returned by a tenant-B-filtered query
+- [x] Rollback fixture: data written in one test is absent in the next
 
 ### Gate 2 — Agent Behavior
-- [ ] **N/A** — no LangGraph agents in this spec
+- [x] **N/A** — no LangGraph agents in this spec
 
 ### Gate 3 — Live Smoke Test
-- [ ] `psql "$DATABASE_URL" -c "CREATE EXTENSION IF NOT EXISTS vector; SELECT extname FROM pg_extension WHERE extname='vector';"` returns one row
-- [ ] `python -c "from agents.config import get_settings; from agents.db import get_connection, check_pgvector; check_pgvector(get_connection(get_settings().database_url))"` exits 0
+- [x] `psql "$DATABASE_URL" -c "CREATE EXTENSION IF NOT EXISTS vector; SELECT extname FROM pg_extension WHERE extname='vector';"` returns one row
+- [x] `python -c "from agents.config import get_settings; from agents.db import get_connection, check_pgvector; check_pgvector(get_connection(get_settings().database_url))"` exits 0
 
 ### Definition of Done
-- [ ] All gates pass; Verification Report (Pass/Fail) output
-- [ ] Docstring rule satisfied in every new file
-- [ ] `docs/build-logs/YYYY-MM-DD-day-01.md` written; README progress table updated (Spec 001 → Done)
+- [x] All gates pass; Verification Report (Pass/Fail) output
+- [x] Docstring rule satisfied in every new file
+- [x] `docs/build-logs/YYYY-MM-DD-day-01.md` written; README progress table updated (Spec 001 → Done)
