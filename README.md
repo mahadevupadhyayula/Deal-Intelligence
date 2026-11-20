@@ -37,7 +37,7 @@ Multi-tenant platform where four cooperating agents research leads, clean CRM da
 | 1. Foundation | 001 | Foundation: `pyproject`, config, Pydantic schemas, DB + pgvector | Done |
 | 1. Foundation | 002 | Tenant-scoped data layer & migrations | Done |
 | 1. Foundation | 003 | FastAPI skeleton + ARQ enqueue/worker plumbing | Done |
-| 2. Core Agents | 004 | ICP definition & deterministic scoring | Drafted |
+| 2. Core Agents | 004 | ICP segments, versioning & deterministic scoring | Done |
 | 2. Core Agents | 005 | Lead Research agent with ICP evaluation (LangGraph) | Drafted |
 | 2. Core Agents | 006 | LLM Wiki agent (pgvector ingest + retrieval) | Planned |
 | 2. Core Agents | 007 | CRM Hygiene agent: conflict detection | Planned |
@@ -59,6 +59,7 @@ Multi-tenant platform where four cooperating agents research leads, clean CRM da
 | 2026-11-20 | 01 | 001 | PASS (16) | N/A | PASS | [log](docs/build-logs/2026-11-20-day-01.md) |
 | 2026-11-20 | 02 | 002 | PASS (27) | N/A | PASS | [log](docs/build-logs/2026-11-20-day-02.md) |
 | 2026-11-20 | 03 | 003 | PASS (59) | N/A | PASS | [log](docs/build-logs/2026-11-20-day-03.md) |
+| 2026-11-20 | 04 | 004 | PASS (143) | N/A | PASS | [log](docs/build-logs/2026-11-20-day-04.md) |
 
 ## Workflow
 

@@ -1,6 +1,6 @@
 # Spec 004 — ICP Segments, Versioning & Deterministic Scoring
 
-**Status:** Draft (revised after review: segments, banded/judged criteria, personas)
+**Status:** Done
 **Phase:** 2 · **Depends on:** 001, 002, 003
 
 ## Objective
@@ -17,7 +17,7 @@ Let a tenant define its Ideal Customer Profile as one or more **independent segm
 ### 1. Models — `agents/schemas/icp.py`
 - **`IcpSegment` (versioned definition, `TenantModel`):** `segment_key` (slug, e.g. `primary-hubspot-consultancy`), `version`, `name`, `rank: "primary" | "secondary"`, `description`, `criteria` (1–25), `personas`, `thresholds {strong=75, moderate=50, weak=25}` (strictly descending), `min_evidence_ratio` (0–1, default 0.5), `created_at`. `IcpSegmentIn` = same minus `tenant_id`, `segment_key`, `version`, `created_at` (server-assigned).
 - **Criteria** (discriminated on `kind`), all with `id` (slug, unique within the segment), `label`, `role: "scoring" | "disqualifier"`, and for scoring criteria an integer `weight` 1–10:
-  - `numeric`: `metric` (e.g. `employee_count`) and `bands: [{grade: ideal|acceptable|secondary, min?, max?}]` (non-overlapping; at least one bound each). Example: 8–20 `ideal`, 5–30 `acceptable`, 31–50 `secondary`. The grade is **computed in code** from the observed value, not chosen by the LLM.
+  - `numeric`: `metric` (e.g. `employee_count`) and `bands: [{grade: ideal|acceptable|secondary, min?, max?}]` (each with at least one bound, inclusive; **bands may overlap and the best matching grade wins**). Example: 8–20 `ideal`, 5–30 `acceptable`, 31–50 `secondary`. The grade is **computed in code** from the observed value, not chosen by the LLM.
   - `judged`: `rubric` (what to look for), optional `grade_hints` `{ideal, acceptable, secondary}` (text describing each grade) and `non_match_examples`. The LLM selects a grade from evidence. Covers geography tiers, company type, services, CRM ecosystem, delivery complexity, commercial readiness, business model, operating maturity.
 - **Grades and points:** `ideal = 1.0`, `acceptable = 0.75`, `secondary = 0.5`, `none = 0`, `unknown` (excluded from the denominator). For a disqualifier, any grade other than `none`/`unknown` means "present" (triggered).
 - **`personas`:** list of `{tier: 1|2, label, roles: list[str]}` (e.g. Tier 1 economic buyers, Tier 2 pain-discovery roles). Validated and stored, **not scored**; a later spec uses them for contact research.
@@ -68,36 +68,42 @@ All routes require the Spec 003 Bearer key; tenant comes only from the key.
 ## 3-Gate Verification & Acceptance Criteria
 
 ### Gate 1 — Unit (`pytest -v`)
-- [ ] Model validation: duplicate criterion ids; no scoring criterion; weight out of 1–10; weight on a disqualifier; overlapping or boundless numeric bands; non-descending thresholds; bad `segment_key`; unknown fields — all rejected
-- [ ] Scoring table tests (parametrised, exact numbers): all `ideal` ⇒ 100; all `none` ⇒ 0; `acceptable`/`secondary` give 0.75/0.5 credit; weights change results as expected; thresholds inclusive at boundaries
-- [ ] Numeric criteria: 12 ⇒ ideal, 25 ⇒ acceptable, 40 ⇒ secondary, 60 ⇒ none, no value ⇒ unknown; an LLM-supplied grade on a numeric criterion is ignored
-- [ ] Unknown handling: excluded from the denominator; `evidence_ratio` below the floor ⇒ `insufficient_data` with the score still reported; all unknown ⇒ `insufficient_data`, score 0
-- [ ] Disqualifier triggered ⇒ `not_fit`, score 0, listed; unknown disqualifier ⇒ listed as unverified, no tier effect
-- [ ] Missing verdicts treated as unknown; verdict for a non-existent criterion id ⇒ `ValueError`
-- [ ] `evaluate_segments`: best segment chosen by tier then score then primary-over-secondary; strong secondary reported as secondary; one segment `insufficient_data` and others weak ⇒ overall `insufficient_data`; all `not_fit` ⇒ `not_fit`
-- [ ] Scoring is deterministic and does no I/O (runs with no DB/network)
-- [ ] `IcpRepo` (as `app_user`): versions increment per segment; exactly one active version per segment; old versions readable; retire leaves history; two concurrent `create_version` calls yield distinct versions
-- [ ] **Isolation:** tenant B cannot read, list, retire or activate tenant A's segments/versions; both tenants may have `primary…` version 1; RLS fail-closed with no tenant set
-- [ ] API: `401` without a valid key; `PUT` valid ⇒ `201`; invalid ⇒ `422`; body `tenant_id` ⇒ `422`; list/get/versions correct; `DELETE` ⇒ `204` then `GET` ⇒ `404`; cross-tenant lookups ⇒ `404`
-- [ ] Both example files validate as `IcpSegmentIn`
+- [x] Model validation: duplicate criterion ids; no scoring criterion; weight out of 1–10; weight on a disqualifier; boundless numeric bands or `min > max`; non-descending thresholds; bad `segment_key`; unknown fields — all rejected
+- [x] Scoring table tests (parametrised, exact numbers): all `ideal` ⇒ 100; all `none` ⇒ 0; `acceptable`/`secondary` give 0.75/0.5 credit; weights change results as expected; thresholds inclusive at boundaries
+- [x] Numeric criteria: 12 ⇒ ideal, 25 ⇒ acceptable, 40 ⇒ secondary, 60 ⇒ none, no value ⇒ unknown; an LLM-supplied grade on a numeric criterion is ignored
+- [x] Unknown handling: excluded from the denominator; `evidence_ratio` below the floor ⇒ `insufficient_data` with the score still reported; all unknown ⇒ `insufficient_data`, score 0
+- [x] Disqualifier triggered ⇒ `not_fit`, score 0, listed; unknown disqualifier ⇒ listed as unverified, no tier effect
+- [x] Missing verdicts treated as unknown; verdict for a non-existent criterion id ⇒ `ValueError`
+- [x] `evaluate_segments`: best segment chosen by tier then score then primary-over-secondary; strong secondary reported as secondary; one segment `insufficient_data` and others weak ⇒ overall `insufficient_data`; all `not_fit` ⇒ `not_fit`
+- [x] Scoring is deterministic and does no I/O (runs with no DB/network)
+- [x] `IcpRepo` (as `app_user`): versions increment per segment; exactly one active version per segment; old versions readable; retire leaves history; two concurrent `create_version` calls yield distinct versions
+- [x] **Isolation:** tenant B cannot read, list, retire or activate tenant A's segments/versions; both tenants may have `primary…` version 1; RLS fail-closed with no tenant set
+- [x] API: `401` without a valid key; `PUT` valid ⇒ `201`; invalid ⇒ `422`; body `tenant_id` ⇒ `422`; list/get/versions correct; `DELETE` ⇒ `204` then `GET` ⇒ `404`; cross-tenant lookups ⇒ `404`
+- [x] Both example files validate as `IcpSegmentIn`
 
 ### Gate 2 — Agent Behavior
-- [ ] **N/A** — no LangGraph agent or LLM in this spec; scoring is pure and fully covered by Gate 1 tests
+- [x] **N/A** — no LangGraph agent or LLM in this spec; scoring is pure and fully covered by Gate 1 tests
 
 ### Gate 3 — Live Smoke Test
-- [ ] `python -m agents.migrate` applies `0004`; `psql` shows `icp_segments` with RLS enabled+forced and the partial unique index
-- [ ] Seed the single tenant and key with the admin CLI; with the API running, `PUT` both example files to `/v1/icp/segments/primary-hubspot-consultancy` and `.../secondary-hubspot-consultancy` ⇒ `201` with version 1; `GET /v1/icp/segments` returns both
-- [ ] A second `PUT` of the primary ⇒ version 2 active; `/versions` lists both; `psql` shows exactly one `is_active` row per segment
-- [ ] `DELETE` of the secondary ⇒ `204`; it disappears from `GET /v1/icp/segments` but its history remains in `psql`
-- [ ] A second tenant's key sees an empty list and `404` on tenant A's segment and versions
+- [x] `python -m agents.migrate` applies `0004`; `psql` shows `icp_segments` with RLS enabled+forced and the partial unique index
+- [x] Seed the single tenant and key with the admin CLI; with the API running, `PUT` both example files to `/v1/icp/segments/primary-hubspot-consultancy` and `.../secondary-hubspot-consultancy` ⇒ `201` with version 1; `GET /v1/icp/segments` returns both
+- [x] A second `PUT` of the primary ⇒ version 2 active; `/versions` lists both; `psql` shows exactly one `is_active` row per segment
+- [x] `DELETE` of the secondary ⇒ `204`; it disappears from `GET /v1/icp/segments` but its history remains in `psql`
+- [x] A second tenant's key sees an empty list and `404` on tenant A's segment and versions
 
 ### Definition of Done
-- [ ] All gates pass; Verification Report (Pass/Fail) output
-- [ ] Docstring rule satisfied in every new file
-- [ ] `docs/build-logs/YYYY-MM-DD-day-XX.md` written; README progress table updated (Spec 004 → Done)
+- [x] All gates pass; Verification Report (Pass/Fail) output
+- [x] Docstring rule satisfied in every new file
+- [x] `docs/build-logs/YYYY-MM-DD-day-XX.md` written; README progress table updated (Spec 004 → Done)
 
 ## Open Questions for Review
 1. **Secondary segment:** your example gives 31–50 employees as the secondary band. Is the secondary ICP "the same profile, larger firms" (I would encode exactly that, with its own thresholds), or a distinct profile with different criteria? If distinct, please share its definition.
 2. **Grade points:** `ideal 1.0 / acceptable 0.75 / secondary 0.5`, thresholds 75/50/25 and evidence floor 0.5 — sensible defaults for your team?
 3. **Disqualifiers:** a single triggered disqualifier forces `not_fit` (recommended); none are in your example, so do you have any (e.g. enterprise SI, non-HubSpot shop)?
 4. **Commercial readiness** (3+ concurrent implementations or 2+ onboardings/month) is rarely public; I would encode it as a low-weight `judged` criterion that will usually be `unknown` and so not hurt the score. OK?
+
+## Resolution of Open Questions (implemented defaults)
+1. Secondary segment shipped as a **placeholder** (same profile, larger firms: 31–50 ideal, 51–75 acceptable) pending the owner's real definition.
+2. Grade points 1.0 / 0.75 / 0.5, thresholds 75/50/25 and evidence floor 0.5 kept as defaults (all configurable per segment except grade points, which are constants in `agents/schemas/icp.py`).
+3. No disqualifiers in the shipped examples; the mechanism is implemented and tested.
+4. Commercial readiness shipped as a weight-2 judged criterion.

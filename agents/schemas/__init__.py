@@ -9,7 +9,17 @@ from agents.schemas.base import TenantModel
 from agents.schemas.conflict import ConflictItem
 from agents.schemas.deal import DealState
 from agents.schemas.handoff import HandoffBrief
+from agents.schemas.icp import (
+    CriterionVerdict,
+    IcpResult,
+    IcpSegment,
+    IcpSegmentIn,
+    SegmentScore,
+)
 from agents.schemas.job import JobRecord
 from agents.schemas.lead import LeadProfile
 
-__all__ = ["ConflictItem", "DealState", "HandoffBrief", "JobRecord", "LeadProfile", "TenantModel"]
+__all__ = [
+    "ConflictItem", "CriterionVerdict", "DealState", "HandoffBrief", "IcpResult", "IcpSegment",
+    "IcpSegmentIn", "JobRecord", "LeadProfile", "SegmentScore", "TenantModel",
+]

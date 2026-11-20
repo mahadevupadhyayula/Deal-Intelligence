@@ -1,0 +1,183 @@
+{
+  "name": "HubSpot/RevOps implementation consultancy, larger firms (secondary)",
+  "rank": "secondary",
+  "description": "PLACEHOLDER: same profile as the primary but larger firms (31-50 employees), pending the owner's definition.",
+  "criteria": [
+    {
+      "id": "company-type",
+      "kind": "judged",
+      "label": "Company type",
+      "role": "scoring",
+      "weight": 10,
+      "rubric": "Is this a founder-led HubSpot / RevOps implementation consultancy?",
+      "grade_hints": {
+        "ideal": "Independent consultancy whose main business is implementing HubSpot/RevOps for clients and which is led by its founder(s).",
+        "acceptable": "Implementation consultancy where HubSpot is one of several CRM platforms, or the founder has stepped back from day-to-day.",
+        "secondary": "Agency or consultancy that offers HubSpot implementation as a side service."
+      },
+      "non_match_examples": [
+        "HubSpot itself or other software vendors",
+        "In-house RevOps teams",
+        "Large systems integrators or enterprise consultancies"
+      ]
+    },
+    {
+      "id": "company-size",
+      "kind": "numeric",
+      "label": "Company size (employees)",
+      "role": "scoring",
+      "weight": 8,
+      "metric": "employee_count",
+      "bands": [
+        {
+          "grade": "ideal",
+          "min": 31,
+          "max": 50
+        },
+        {
+          "grade": "acceptable",
+          "min": 51,
+          "max": 75
+        }
+      ]
+    },
+    {
+      "id": "geography",
+      "kind": "judged",
+      "label": "Geography",
+      "role": "scoring",
+      "weight": 6,
+      "rubric": "Where does the company operate and sell?",
+      "grade_hints": {
+        "ideal": "Core markets: United States, United Kingdom, Canada, Australia.",
+        "acceptable": "Selective Western Europe (for example Ireland, Netherlands, Germany, Nordics)."
+      },
+      "non_match_examples": [
+        "Primarily Asia, Latin America, Africa or Eastern Europe"
+      ]
+    },
+    {
+      "id": "target-customers",
+      "kind": "judged",
+      "label": "Target customers",
+      "role": "scoring",
+      "weight": 6,
+      "rubric": "Which kinds of customers does the consultancy serve?",
+      "grade_hints": {
+        "ideal": "B2B SaaS and technology companies.",
+        "acceptable": "Complex B2B services companies."
+      },
+      "non_match_examples": [
+        "Primarily B2C, retail, or consumer brands"
+      ]
+    },
+    {
+      "id": "core-services",
+      "kind": "judged",
+      "label": "Core services",
+      "role": "scoring",
+      "weight": 8,
+      "rubric": "Does the company sell CRM implementation, onboarding, migration, integration, CRM architecture or RevOps transformation?",
+      "grade_hints": {
+        "ideal": "Implementation, migration, integration and RevOps transformation are the core offer.",
+        "acceptable": "Several of these services are offered but alongside unrelated services."
+      }
+    },
+    {
+      "id": "crm-ecosystem",
+      "kind": "judged",
+      "label": "CRM ecosystem",
+      "role": "scoring",
+      "weight": 7,
+      "rubric": "Which CRM platforms does the company work with?",
+      "grade_hints": {
+        "ideal": "Primarily HubSpot, including projects spanning multiple HubSpot Hubs.",
+        "acceptable": "HubSpot is a major platform alongside others (e.g. Salesforce)."
+      },
+      "non_match_examples": [
+        "No meaningful HubSpot practice"
+      ]
+    },
+    {
+      "id": "delivery-complexity",
+      "kind": "judged",
+      "label": "Delivery complexity",
+      "role": "scoring",
+      "weight": 5,
+      "rubric": "How complex is delivery?",
+      "grade_hints": {
+        "ideal": "Multiple concurrent client implementations, customised projects, multi-stakeholder delivery.",
+        "acceptable": "Some concurrent or customised implementations."
+      }
+    },
+    {
+      "id": "commercial-readiness",
+      "kind": "judged",
+      "label": "Commercial readiness",
+      "role": "scoring",
+      "weight": 2,
+      "rubric": "Evidence of 3+ concurrent implementations or 2+ client onboardings per month. Rarely public; mark unknown without evidence.",
+      "grade_hints": {
+        "ideal": "3+ concurrent implementations or 2+ onboardings per month.",
+        "acceptable": "Roughly 1-2 concurrent implementations."
+      }
+    },
+    {
+      "id": "business-model",
+      "kind": "judged",
+      "label": "Business model",
+      "role": "scoring",
+      "weight": 4,
+      "rubric": "How does the company price and package work?",
+      "grade_hints": {
+        "ideal": "Fixed-scope implementation projects, often with recurring retainers.",
+        "acceptable": "Mostly time-and-materials or mostly retainers."
+      }
+    },
+    {
+      "id": "operating-maturity",
+      "kind": "judged",
+      "label": "Operating maturity",
+      "role": "scoring",
+      "weight": 4,
+      "rubric": "How mature is delivery?",
+      "grade_hints": {
+        "ideal": "Established delivery team and repeatable services, but founder-led or fragmented processes.",
+        "acceptable": "Established team with already well-systemised processes, or a very small team still forming services."
+      }
+    }
+  ],
+  "personas": [
+    {
+      "tier": 1,
+      "label": "Economic buyers",
+      "roles": [
+        "Founder",
+        "CEO",
+        "Managing Partner",
+        "Head of Delivery",
+        "Operations Director",
+        "RevOps Director"
+      ]
+    },
+    {
+      "tier": 2,
+      "label": "Pain discovery",
+      "roles": [
+        "Implementation Manager",
+        "Project Manager",
+        "Senior HubSpot Consultant",
+        "CRM Consultant",
+        "Solutions Consultant",
+        "Onboarding Specialist",
+        "Delivery Operations"
+      ]
+    }
+  ],
+  "thresholds": {
+    "strong": 75,
+    "moderate": 50,
+    "weak": 25
+  },
+  "min_evidence_ratio": 0.5
+}
