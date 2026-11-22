@@ -1,6 +1,6 @@
 # Spec 005 — Lead Research Agent with ICP Evaluation (LangGraph)
 
-**Status:** Implemented; Gates 1 and 2 pass, **Gate 3 BLOCKED** (needs live Tavily, LLM and LangSmith credentials)
+**Status:** Done; Gates 1, 2 and 3 pass (Gate 3 calibration set not run: no labels supplied)
 **Phase:** 2 · **Depends on:** 001, 002, 003, 004
 
 ## Objective
@@ -146,17 +146,17 @@ Each case: input, segments (from `docs/examples/icp/primary_hubspot_consultancy.
 - [x] Two-tenant run: separate ICPs and results, no cross-tenant data in state or DB; `thread_id = tenant:lead:job`
 
 ### Gate 3 — Live Smoke Test (needs `TAVILY_API_KEY`, an LLM provider key, `LANGSMITH_API_KEY`)
-- [ ] Redis + Postgres up, migrations applied, tenant + API key minted, the two example segments loaded via `PUT /v1/icp/segments/{key}`, API and worker running with real adapters
-- [ ] `POST /v1/jobs {"kind":"lead_research","payload":{"lead_id":"l1","company_name":"<chosen consultancy>","domain":"<its domain>"}}` ⇒ `202`; job `succeeded` within the timeout
-- [ ] `GET /v1/leads/l1` shows a profile with ≥ 2 source URLs and an evaluation whose `icp_versions` match the active segments, `entity_confirmed: true`
-- [ ] **Audit checks on the stored result:** every non-`unknown` verdict has ≥ 1 evidence quote; re-fetching or re-running confirms each quote appears in its cited source text; re-running `evaluate_segments` on the stored verdicts reproduces the stored scores, best segment and tier exactly
-- [ ] Judgement check (LLM output varies, reported honestly): a real founder-led HubSpot implementation consultancy scores ≥ `moderate`; a clearly mismatched company (e.g. a local bakery) scores `weak`/`not_fit`
+- [x] Redis + Postgres up, migrations applied, tenant + API key minted, the two example segments loaded via `PUT /v1/icp/segments/{key}`, API and worker running with real adapters
+- [x] `POST /v1/jobs {"kind":"lead_research","payload":{"lead_id":"l1","company_name":"<chosen consultancy>","domain":"<its domain>"}}` ⇒ `202`; job `succeeded` within the timeout
+- [x] `GET /v1/leads/l1` shows a profile with ≥ 2 source URLs and an evaluation whose `icp_versions` match the active segments, `entity_confirmed: true`
+- [x] **Audit checks on the stored result:** every non-`unknown` verdict has ≥ 1 evidence quote; re-fetching or re-running confirms each quote appears in its cited source text; re-running `evaluate_segments` on the stored verdicts reproduces the stored scores, best segment and tier exactly
+- [x] Judgement check (LLM output varies, reported honestly): a real founder-led HubSpot implementation consultancy scores ≥ `moderate`; a clearly mismatched company (e.g. a local bakery) scores `weak`/`not_fit`
 - [ ] **Calibration set** (when the owner supplies `tests/fixtures/lead_research/labelled_companies.json`, ~10 companies labelled fit / not-fit): run all live; report agreement (fit ⇒ strong/moderate, not-fit ⇒ weak/not_fit; `insufficient_data` counted separately) and list disagreements. *Reported, not gating, until labels exist; marked "not run" otherwise.*
-- [ ] `GET /v1/leads?tier=strong` lists the strong fits ordered by score
-- [ ] LangSmith shows the trace with load_icp/resolve_entity/plan/search/synthesize/validate/score/persist spans and `tenant_hash` metadata; LLM calls, searches and sources stayed within caps; the run cost is recorded in the build log
+- [x] `GET /v1/leads?tier=strong` lists the strong fits ordered by score
+- [x] LangSmith shows the trace with load_icp/resolve_entity/plan/search/synthesize/validate/score/persist spans and `tenant_hash` metadata; LLM calls, searches and sources stayed within caps; the run cost is recorded in the build log
 
 ### Definition of Done
-- [ ] All gates pass (Gate 3 requires the credentials below; otherwise it is reported as **blocked**, never Pass); Verification Report (Pass/Fail) output
+- [x] All gates pass (calibration set not run, non-gating); Verification Report (Pass/Fail) output
 - [x] Docstring rule satisfied in every new file
 - [x] `docs/build-logs/2026-11-20-day-05.md` written; README progress table updated (Gate 3 reported as blocked)
 
@@ -170,5 +170,6 @@ Each case: input, segments (from `docs/examples/icp/primary_hubspot_consultancy.
 - **Retry placement:** retries live in the graph's node layer (`call_with_retries`), not inside the adapters, so each run's budget counters stay per-run (adapters are shared across jobs). Behaviour and tests match the spec.
 - **`official_domain`** exists in `ResearchFindings` but is informational only; entity confirmation never trusts the model's domain claim.
 - **Unverified fields:** `industry` and `signals` are LLM text without quote verification (length-capped); only `employee_count` and the criterion verdicts are evidence-backed.
-- **Untested against real services:** `TavilySearch` (mocked HTTP only) and `LangChainLLM` (fake chat model only). Provider schema compatibility of the dict-keyed `ResearchFindings` (e.g. OpenAI strict structured outputs) is unverified and is a Gate 3 item.
-- **Gate 3 status:** nothing in the live checklist was run; Tavily/LangSmith keys and an LLM model are not configured. The live plumbing that does not need them was checked (migration, API/worker start, unconfigured `lead_research` job fails with a clear message, API process imports no agent libraries).
+- **Live findings (Gate 3):** OpenAI's strict structured-output mode rejected the dict-keyed `ResearchFindings` schema (`OpenAIInvalidRequestError`); `LangChainLLM` now uses `method="function_calling"` for `openai:` models only (regression test added). Tavily and the OpenAI adapter now verified live with `openai:gpt-5.4`.
+- **Gate 3 status:** run live on 2026-11-22; see `docs/build-logs/2026-11-22-day-06.md`. Calibration set not run (no labelled file). Judgement-check companies were chosen by the assistant (The Middle Six; Independent Baking Co.), not the owner.
+- **Operational:** provider and LangSmith keys are read from `os.environ`; a shell-exported `LANGCHAIN_TRACING_V2=false` silently disables tracing even with `LANGSMITH_TRACING=true`. Start the worker with it unset.

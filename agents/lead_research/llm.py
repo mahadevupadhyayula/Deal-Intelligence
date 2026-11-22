@@ -35,9 +35,13 @@ class LangChainLLM:
         from langchain.chat_models import init_chat_model
 
         self._model = init_chat_model(model)
+        # OpenAI's default strict JSON-schema mode rejects our dict-keyed ResearchFindings (found
+        # in the Spec 005 live smoke run). function_calling is non-strict; we validate with
+        # Pydantic anyway, so nothing is lost. Other providers keep their default.
+        self._so_kwargs = {"method": "function_calling"} if model.startswith("openai:") else {}
 
     async def generate(self, schema: type[T], system: str, user: str) -> T:
-        runnable = self._model.with_structured_output(schema)
+        runnable = self._model.with_structured_output(schema, **self._so_kwargs)
         try:
             out = await runnable.ainvoke([("system", system), ("human", user)])
             return out if isinstance(out, schema) else schema.model_validate(out)

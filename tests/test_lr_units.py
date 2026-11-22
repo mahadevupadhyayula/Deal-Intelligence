@@ -403,3 +403,15 @@ async def test_langchain_adapter_error_classification(monkeypatch, make, transie
     with pytest.raises(LLMError) as ei:
         await lc_llm(monkeypatch, make).generate(QueryPlan, "s", "u")
     assert ei.value.transient is transient
+
+
+def test_openai_uses_function_calling_other_providers_default(monkeypatch):
+    # Regression from the live smoke run: OpenAI strict JSON-schema mode rejects the dict-keyed
+    # ResearchFindings schema, so only openai: models get method="function_calling".
+    import langchain.chat_models as cm
+
+    from agents.lead_research.llm import LangChainLLM
+
+    monkeypatch.setattr(cm, "init_chat_model", lambda name: object())
+    assert LangChainLLM("openai:gpt-5.4")._so_kwargs == {"method": "function_calling"}
+    assert LangChainLLM("anthropic:claude-sonnet-5-5")._so_kwargs == {}
