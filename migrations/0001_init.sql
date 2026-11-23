@@ -8,7 +8,7 @@
 --     columns we filter on are promoted to real columns.
 --   * Indexes lead with tenant_id so every tenant-filtered query can use them.
 
-CREATE EXTENSION IF NOT EXISTS vector;   -- needed from Spec 006; verified here (admin only)
+CREATE EXTENSION IF NOT EXISTS vector;   -- needed from Spec 019; verified here (admin only)
 
 CREATE TABLE tenants (
     tenant_id  text PRIMARY KEY CHECK (tenant_id <> ''),

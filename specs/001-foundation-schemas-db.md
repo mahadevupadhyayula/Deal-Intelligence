@@ -41,7 +41,7 @@ All models inherit a `TenantModel` base in `agents/schemas/base.py` with require
 ## Out of Scope
 - Migrations / real table schemas and row-level security (Spec 002)
 - FastAPI, ARQ, LangGraph, LLM calls (Specs 003+)
-- Docker compose (Spec 015)
+- Docker compose (Spec 008)
 
 ## 3-Gate Verification & Acceptance Criteria
 

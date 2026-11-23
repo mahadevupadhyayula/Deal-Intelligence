@@ -45,3 +45,24 @@ Route53/ALB ─▶ EKS: api (FastAPI, HPA)
 
 - Terraform in `infra/terraform/` (VPC, EKS, RDS, ElastiCache, IAM/IRSA); manifests in `infra/k8s/`; images in `infra/docker/`.
 - KEDA scales worker pods on queue depth, down to near-zero when idle.
+
+## 4. Delivery Model: Vertical Slices
+
+Each agent ships as a slice: **build → harden → evaluate → deploy (local) → UI**, in the order Lead Research, CRM Hygiene, LLM Wiki, Sales-to-Implementation Handoff (Wiki precedes Handoff because Handoff reads it). See the README roadmap for spec numbers.
+
+### Which guardrails are shared and which are per-agent
+
+| Shared (built once, Slice 1, reused) | Per-agent (lives with the agent's specs) |
+|---|---|
+| Untrusted-content wrapping and delimiting; schema-validated outputs; tool allowlists | **Lead Research:** web-page injection cases, entity and domain checks, ICP calibration against labelled companies |
+| Evidence/quote verification pattern (from Spec 005) | **CRM Hygiene:** write gating by risk, HITL policy, OAuth token vault, webhook signature verification |
+| Per-tenant rate limits and cost quotas; LLM/search budgets | **LLM Wiki:** retrieval tenant-isolation and leakage tests, ingest poisoning, citation grounding |
+| Log, trace and prompt redaction (secrets, PII); hashed tenant ids in traces | **Handoff:** faithfulness to sources, no invented commitments |
+| Eval harness: dataset loader, scorers, LangSmith runner, adversarial corpus format | Agent-specific golden datasets and expected trajectories |
+| Docker, Compose, kind + KEDA, Terraform modules, observability stack | Per-agent deploy delta (worker deployment, scaler, config) |
+
+### Deployment path
+1. Docker Compose full stack (Spec 008) and observability (Spec 009).
+2. Local Kubernetes with KEDA on a laptop (Spec 010): no cloud cost.
+3. Terraform validated with `terraform plan` only (Spec 011): the AWS design above is written and checked, not applied.
+4. A real AWS `apply` is a separate, optional spec once the owner chooses to spend.

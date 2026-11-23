@@ -62,7 +62,7 @@ All routes require the Spec 003 Bearer key; tenant comes only from the key.
 ## Out of Scope
 - Researching companies or LLM judging of criteria (Spec 005)
 - Contact/persona research and outreach targeting (later spec; personas are stored only)
-- ICP editor UI (Spec 014); roles/permissions; audit of who changed an ICP; tenant-management features
+- ICP editor UI (Spec 012); roles/permissions; audit of who changed an ICP; tenant-management features
 - ICPs learned from won/lost deals or CRM data; re-scoring existing leads when an ICP changes; routing/notifications by tier
 
 ## 3-Gate Verification & Acceptance Criteria

@@ -1,6 +1,6 @@
 # Deal Intelligence — Multi-Agent B2B SaaS
 
-Multi-tenant platform where four cooperating agents research leads, clean CRM data with human approval, build a deal wiki, and hand won deals to implementation. Built spec-by-spec with 3-Gate Verification (see [CLAUDE.md](CLAUDE.md)).
+Multi-tenant platform where four cooperating agents research leads, clean CRM data with human approval, build a deal wiki, and hand won deals to implementation. Built spec-by-spec, one agent slice at a time, with 3-Gate Verification (see [CLAUDE.md](CLAUDE.md)).
 
 ## System Architecture
 
@@ -30,27 +30,61 @@ Multi-tenant platform where four cooperating agents research leads, clean CRM da
                  └──────────────────────────────────────────────┘
 ```
 
-## Roadmap — 5 Phases / 17 Specs
+## Roadmap — Vertical Slices
 
-| Phase | Spec | Title | Status |
-|-------|------|-------|--------|
-| 1. Foundation | 001 | Foundation: `pyproject`, config, Pydantic schemas, DB + pgvector | Done |
-| 1. Foundation | 002 | Tenant-scoped data layer & migrations | Done |
-| 1. Foundation | 003 | FastAPI skeleton + ARQ enqueue/worker plumbing | Done |
-| 2. Core Agents | 004 | ICP segments, versioning & deterministic scoring | Done |
-| 2. Core Agents | 005 | Lead Research agent with ICP evaluation (LangGraph) | Done |
-| 2. Core Agents | 006 | LLM Wiki agent (pgvector ingest + retrieval) | Planned |
-| 2. Core Agents | 007 | CRM Hygiene agent: conflict detection | Planned |
-| 2. Core Agents | 008 | CRM Hygiene HITL: `interrupt` + `PostgresSaver` resume | Planned |
-| 2. Core Agents | 009 | Sales-to-Implementation Handoff agent | Planned |
-| 3. Integrations | 010 | CRM connectors + OAuth token vault | Planned |
-| 3. Integrations | 011 | Webhook ingestion: idempotency & rate limits | Planned |
-| 4. Safety & Quality | 012 | Prompt-injection guardrails | Planned |
-| 4. Safety & Quality | 013 | Golden datasets, trajectory evals, LangSmith | Planned |
-| 4. Safety & Quality | 014 | Streamlit UI: ICP editor, review queue & deal views | Planned |
-| 5. Production | 015 | Docker images + `docker compose` dev stack | Planned |
-| 5. Production | 016 | Terraform: VPC, EKS, RDS, ElastiCache | Planned |
-| 5. Production | 017 | K8s manifests, KEDA autoscaling, observability | Planned |
+Each agent is built, hardened, evaluated, deployed and given a UI **before the next agent starts**. A slice is not done until it passes end to end locally (see CLAUDE.md §g). Shared infrastructure is built once, in the first slice, and later slices only add their delta. Specs 006+ are provisional until drafted; the numbering below supersedes the original 17-spec plan (older build logs use the old numbers).
+
+### Foundation (done)
+
+| Spec | Title | Status |
+|------|-------|--------|
+| 001 | Foundation: `pyproject`, config, Pydantic schemas, DB + pgvector | Done |
+| 002 | Tenant-scoped data layer & migrations | Done |
+| 003 | FastAPI skeleton + ARQ enqueue/worker plumbing | Done |
+
+### Slice 1 — Lead Research (build, then harden, evaluate, deploy, UI)
+
+| Step | Spec | Title | Status |
+|------|------|-------|--------|
+| Build | 004 | ICP segments, versioning & deterministic scoring | Done |
+| Build | 005 | Lead Research agent with ICP evaluation (LangGraph) | Done |
+| Harden (shared) | 006 | Prompt-injection guardrails library, per-tenant rate limits and cost quotas, log/trace redaction; applied to Lead Research | Planned |
+| Evaluate (shared) | 007 | Eval harness: golden datasets, adversarial corpus, labelled calibration set, LangSmith evals | Planned |
+| Deploy: local | 008 | Docker images + `docker compose` full stack (api, worker, migrate, Postgres, Redis) | Planned |
+| Deploy: local | 009 | Observability: structured logs, metrics (queue depth, job latency, LLM cost), OpenTelemetry/LangSmith wiring | Planned |
+| Deploy: local | 010 | Local Kubernetes (kind): manifests + KEDA queue-depth autoscaling, runs on the laptop | Planned |
+| Deploy: cloud sim | 011 | Terraform (VPC, EKS, RDS, ElastiCache, IRSA) written and validated with `terraform plan` only; **no apply, no cost** | Planned |
+| UI | 012 | Streamlit: ICP editor, lead list, evaluation view | Planned |
+
+### Slice 2 — CRM Hygiene
+
+| Step | Spec | Title | Status |
+|------|------|-------|--------|
+| Build | 013 | Conflict detection (`ConflictItem`) | Planned |
+| Build | 014 | HITL: LangGraph `interrupt` + `PostgresSaver` resume | Planned |
+| Build | 015 | CRM connectors + OAuth token vault | Planned |
+| Build | 016 | Webhook ingestion: signatures, idempotency, rate limits | Planned |
+| Harden + evaluate | 017 | CRM-specific guardrails (write gating by risk, HITL policy) + golden datasets | Planned |
+| Deploy + UI | 018 | Deploy delta (worker, scaler) + approval review queue | Planned |
+
+### Slice 3 — LLM Wiki
+
+| Step | Spec | Title | Status |
+|------|------|-------|--------|
+| Build | 019 | pgvector ingest + retrieval with mandatory `tenant_id` filter | Planned |
+| Harden + evaluate | 020 | Retrieval isolation and poisoning tests, citation grounding, golden datasets | Planned |
+| Deploy + UI | 021 | Deploy delta + wiki views | Planned |
+
+### Slice 4 — Sales-to-Implementation Handoff
+
+| Step | Spec | Title | Status |
+|------|------|-------|--------|
+| Build | 022 | Handoff agent (`HandoffBrief` from deal state + wiki + research) | Planned |
+| Harden + evaluate | 023 | Faithfulness checks (no invented commitments), golden datasets | Planned |
+| Deploy + UI | 024 | Deploy delta + handoff views | Planned |
+
+### Real cloud deployment (later, optional)
+After the local stack and the Terraform plan are validated, a real `terraform apply` to AWS can be added as a separate spec when you choose to spend the money.
 
 ## Build Progress
 

@@ -6,7 +6,7 @@ WHERE: Compiled once per job by `handler.py` and invoked with a `thread_id`.
 WHY: An explicit graph (vs a free-roaming agent) makes the trajectory fixed and testable and
 bounds cost: the only loop is score -> plan_queries, taken at most `max_refine_loops` times and
 only when finishing the unknowns could change the tier. It accepts an optional checkpointer
-(Spec 008 supplies PostgresSaver for HITL); none is used here.
+(Spec 014 supplies PostgresSaver for HITL); none is used here.
 """
 from langgraph.graph import END, START, StateGraph
 

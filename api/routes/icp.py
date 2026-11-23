@@ -1,7 +1,7 @@
 """ICP segment management endpoints.
 
 WHAT: PUT/GET/DELETE for a tenant's versioned ICP segments.
-WHERE: Used by operators now and the Streamlit ICP editor later (Spec 014); the Lead
+WHERE: Used by operators now and the Streamlit ICP editor later (Spec 012); the Lead
 Research agent reads the same data through `IcpRepo`.
 WHY: PUT always creates a NEW version (history is immutable) and makes it active. Tenant
 comes only from the API key; request bodies cannot carry tenant_id/version (extra=forbid),

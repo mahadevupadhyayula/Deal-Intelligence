@@ -50,3 +50,10 @@ When wrapping up a session, create/update `docs/build-logs/YYYY-MM-DD-day-XX.md`
 4. 3-Gate Verification results
 
 Then update the progress table in `README.md`.
+
+## g) Vertical-Slice Delivery
+
+- Build **one agent at a time**. An agent is not "done" until its slice is: built → hardened (guardrails) → evaluated (golden datasets, adversarial cases) → deployed on the local stack (Docker Compose, then local Kubernetes) → exposed in the UI. Do not start the next agent before the current slice passes end to end.
+- **Shared** capabilities (prompt-injection library, quotas/rate limits, log redaction, eval harness, Docker/K8s/Terraform scaffolding, observability) are built once in the first slice and reused; later slices add only their delta.
+- **Agent-specific** guardrails stay with the agent's own specs (e.g. CRM write gating, retrieval isolation, handoff faithfulness).
+- Cloud: validate with `terraform plan` and the local Kubernetes (kind) first. A real `terraform apply` needs an explicit, separate spec and the user's go-ahead because it costs money.

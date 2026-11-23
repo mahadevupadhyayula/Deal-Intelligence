@@ -1,7 +1,7 @@
 """ARQ WorkerSettings.
 
 WHAT: Configuration for `arq workers.settings.WorkerSettings`.
-WHERE: Process entry point for workers; KEDA scales its pods on Redis queue depth (Spec 017).
+WHERE: Process entry point for workers; KEDA scales its pods on Redis queue depth (Spec 010).
 WHY: One DB pool plus one search/LLM client per worker process (opened at startup) shared by
 all jobs it runs. Search/LLM are only built when configured, so a worker without research
 credentials still starts and runs other kinds; `lead_research` jobs then fail with a clear

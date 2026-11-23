@@ -1,7 +1,7 @@
 """Liveness and readiness probes.
 
 WHAT: /healthz (process is up) and /readyz (Postgres + Redis reachable).
-WHERE: Polled by Kubernetes (Spec 017) and load balancers; unauthenticated by design.
+WHERE: Polled by Kubernetes (Spec 010) and load balancers; unauthenticated by design.
 WHY: Split probes: liveness must not depend on backends (else a Redis blip restarts every
 pod); readiness should, so traffic is withheld until dependencies work.
 """

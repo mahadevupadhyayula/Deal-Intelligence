@@ -47,10 +47,10 @@ Stand up the request path every agent will use: an authenticated, tenant-aware F
 - WHAT/WHERE/WHY docstring in every new file; SQL header comment in `0003`.
 
 ## Out of Scope
-- Docker images/compose (Spec 015), K8s/KEDA (Spec 017)
-- Real agent handlers (Specs 005–009); LangGraph integration
-- Webhook endpoints, idempotency keys, rate limiting (Spec 011)
-- CRM OAuth / token vault (Spec 010); user login/UI sessions (Spec 014)
+- Docker images/compose (Spec 008), K8s/KEDA (Spec 010)
+- Real agent handlers (the agent specs); LangGraph integration
+- Webhook endpoints, idempotency keys, rate limiting (Spec 016)
+- CRM OAuth / token vault (Spec 015); user login/UI sessions (Spec 012)
 - SQS transport (ARQ/Redis only for now); job retries, cancellation, outbox pattern
 - Prometheus metrics / structured logging beyond default
 

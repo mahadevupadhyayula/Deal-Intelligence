@@ -68,15 +68,15 @@ State (`TypedDict`): `tenant_id, lead_id, job_id, company_name, domain, segments
 9. `persist`: in **one transaction**, upsert `LeadProfile` (`AsyncLeadRepo`) and insert the `IcpEvaluation` (`AsyncEvaluationRepo`). Idempotent: unique `(tenant_id, job_id)`, `ON CONFLICT DO NOTHING`. Persisted even when sources are empty (`no_results` ⇒ empty profile, `insufficient_data`).
 
 - **Budget guard:** when searches, LLM calls or sources hit their caps, finish with `status="partial"` using what exists; never loop past a cap.
-- Compiled with an **optional checkpointer** (none here; Spec 008 supplies `PostgresSaver`); invoked with `thread_id = make_thread_id(tenant_id, lead_id, job_id)`.
+- Compiled with an **optional checkpointer** (none here; Spec 014 supplies `PostgresSaver`); invoked with `thread_id = make_thread_id(tenant_id, lead_id, job_id)`.
 - Profile `confidence` = `0.4·min(n_verified_sources,3)/3 + 0.4·(filled_fields/4) + 0.2·(domain confirmed)`, clamped to [0,1]; computed, not LLM-reported.
 - Design notes: one combined `synthesize` call halves cost and grounds verdicts in the same evidence; judging distinct criteria once avoids inconsistent grades for the same attribute across segments; the pessimistic/optimistic bound makes "should we research more?" a cheap deterministic decision instead of a heuristic.
 
-### 5. Prompt-injection baseline (full guardrails are Spec 012)
+### 5. Prompt-injection baseline (full guardrails are Spec 006)
 - Fetched text is wrapped as `<untrusted_source id=… url=…>…</untrusted_source>`; the system prompt says contents are data, never instructions (including claims about ICP fit).
 - The synthesis call has **no tools**; output must validate against `ResearchFindings`. The LLM cannot set score, tier, tenant or segment; those are computed or stamped in code.
 - Quote verification means injected text cannot create evidence out of thin air, and cannot fabricate a quote that is not on a fetched page.
-- Honest limit: these are structural defences. A fetched page can still contain a persuasive false statement that gets quoted and cited; flagged single-source disqualifiers (step 6g) and the later HITL review (Spec 008) are the mitigation. Adversarial model evals are Spec 013.
+- Honest limit: these are structural defences. A fetched page can still contain a persuasive false statement that gets quoted and cited; flagged single-source disqualifiers (step 6g) and the later HITL review (Spec 014) are the mitigation. Adversarial model evals are Spec 007.
 
 ### 6. Persistence — migration `0005_lead_icp_evaluations.sql`, async repos
 - `lead_icp_evaluations(tenant_id, evaluation_id uuid, lead_id, best_segment_key, best_rank, score, tier, status, job_id, data jsonb, created_at, PK (tenant_id, evaluation_id), UNIQUE (tenant_id, job_id))`, index `(tenant_id, lead_id, created_at DESC)`, index `(tenant_id, tier, score DESC)`, **forced RLS**, `app_user` `SELECT, INSERT`. **History is kept**: each run inserts a row; "latest" is by `created_at`. `LeadProfile` is overwritten on re-research (the evaluation history keeps the evidence).
@@ -110,10 +110,10 @@ Each case: input, segments (from `docs/examples/icp/primary_hubspot_consultancy.
 - WHAT/WHERE/WHY docstring in every new file; comments on the trade-offs (bounded loop, quote verification, computed scores, protocol seams, single synthesize call, dedupe).
 
 ## Out of Scope
-- ICP definition/management, scoring rules and persona storage (Spec 004); ICP editor UI (Spec 014); contact/persona research using the ICP's personas
-- Writing research into the LLM Wiki (Spec 006); CRM sync or writing the score back to the CRM (Spec 010+)
-- `PostgresSaver` / HITL review of flagged results (Spec 008); full prompt-injection guardrails (Spec 012); LangSmith-hosted eval datasets and adversarial evals (Spec 013)
-- Per-tenant API keys, budgets/quotas, rate limits, bulk lead submission (Specs 010/011 and later); per-tenant tracing opt-out
+- ICP definition/management, scoring rules and persona storage (Spec 004); ICP editor UI (Spec 012); contact/persona research using the ICP's personas
+- Writing research into the LLM Wiki (Spec 019); CRM sync or writing the score back to the CRM (Spec 015+)
+- `PostgresSaver` / HITL review of flagged results (Spec 014); full prompt-injection guardrails (Spec 006); LangSmith-hosted eval datasets and adversarial evals (Spec 007)
+- Per-tenant API keys, bulk lead submission (Spec 015/016 and later); per-tenant budgets/quotas and rate limits (Spec 006); per-tenant tracing opt-out
 - Stale-job recovery after hard worker crashes; re-evaluating existing leads when an ICP changes; routing/notifications by tier; page fetching beyond Tavily text; result caching
 
 ## 3-Gate Verification & Acceptance Criteria
