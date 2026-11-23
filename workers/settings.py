@@ -15,12 +15,29 @@ from arq.connections import RedisSettings
 from psycopg_pool import AsyncConnectionPool
 
 from agents.config import get_settings
+from agents.guardrails.redact import install_log_redaction, register_secret
+from agents.guardrails.tracing import configure_trace_redaction
 from workers.tasks import run_job
 
 _settings = get_settings()
 
 
+def _register_secrets() -> None:
+    """Make known secret values redactable wherever they appear (logs, errors, traces)."""
+    for secret in (_settings.database_url, _settings.tavily_api_key, _settings.admin_database_url,
+                   _settings.app_user_password):
+        if secret is not None:
+            register_secret(secret.get_secret_value())
+    import os
+    for name in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "LANGSMITH_API_KEY"):
+        register_secret(os.environ.get(name))
+
+
 async def startup(ctx: dict) -> None:
+    install_log_redaction()
+    _register_secrets()
+    if _settings.trace_redaction:
+        configure_trace_redaction()
     ctx["pool"] = AsyncConnectionPool(_settings.database_url.get_secret_value(), open=False)
     await ctx["pool"].open()
     ctx["run_timeout"] = _settings.research_run_timeout_seconds

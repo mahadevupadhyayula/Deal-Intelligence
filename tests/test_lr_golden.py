@@ -8,6 +8,7 @@ WHY: With a scripted LLM this proves orchestration, evidence verification, scori
 persistence. It does NOT prove a real model judges well (see Spec 005, Gate 3).
 """
 import json
+import re
 
 import pytest
 
@@ -83,7 +84,7 @@ async def test_golden_case(apool, name):
         crit = synth_prompts[0].split("CRITERIA to judge")[1].split("SOURCES:")[0]
         assert sum(1 for ln in crit.splitlines() if ln.startswith("- c")) == exp["synth_criteria_lines"]
     if exp.get("closer_count_equals_sources"):
-        assert synth_prompts[0].count("</untrusted_source>") == len(final["sources"])
+        assert len(re.findall(r"</untrusted_source_[0-9a-f]{16}>", synth_prompts[0])) == len(final["sources"])
     dumped = json.dumps([ev.model_dump(mode="json"), profile.model_dump(mode="json")])
     for bad in exp.get("forbidden_strings", []):
         assert bad not in dumped

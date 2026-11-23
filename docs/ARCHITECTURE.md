@@ -27,9 +27,9 @@ All agents are LangGraph graphs run inside ARQ workers. Every run is keyed by `t
 
 1. **Multi-tenancy:** `tenant_id` required on all models, queries, vector filters, and thread ids; isolation tests are part of Gate 1. Postgres row-level security as defense in depth.
 2. **Stateless HITL:** pause/resume via `PostgresSaver`; no worker-local state.
-3. **Webhook idempotency & rate limits:** signature verification, idempotency key per event stored before enqueue, per-tenant rate limiting; handlers return fast and enqueue.
+3. **Webhook idempotency & rate limits:** signature verification, idempotency key per event stored before enqueue, per-tenant rate limiting; handlers return fast and enqueue. Per-tenant job rate limit, active-job cap and daily provider quotas are built (Spec 006, `agents/guardrails/limits.py`); webhook signatures/idempotency come with Spec 016.
 4. **OAuth token vault:** CRM tokens encrypted (KMS / Secrets Manager), referenced by id, never logged or placed in agent state/prompts; refresh handled centrally.
-5. **Prompt-injection guardrails:** all external text (emails, web pages, CRM notes) is treated as untrusted data; delimited in prompts, tool permissions least-privilege, outputs schema-validated by Pydantic, writes to CRM gated by HITL for high risk.
+5. **Prompt-injection guardrails:** all external text (emails, web pages, CRM notes) is treated as untrusted data; delimited in prompts, tool permissions least-privilege, outputs schema-validated by Pydantic, writes to CRM gated by HITL for high risk. Shared implementation in `agents/guardrails/` (Spec 006): nonce-delimited untrusted text, sanitising, injection flags, evidence-overlap rule, canary leak detection, redaction of logs/errors/traces.
 
 ## 3. Target AWS Architecture (EKS + Terraform)
 

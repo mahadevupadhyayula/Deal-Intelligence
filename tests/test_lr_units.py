@@ -33,7 +33,6 @@ from agents.lead_research.text import (
     normalize_url,
     on_domain,
     quote_in_text,
-    sanitize_source_text,
 )
 from agents.lead_research.tools import FixtureSearch, SearchError, SearchResult, TavilySearch
 from agents.lead_research.validate import (
@@ -73,10 +72,6 @@ def test_quote_matching_tolerates_formatting_not_content():
     assert quote_in_text("we're a founder-led hubspot - consultancy", text)
     assert not quote_in_text("we are a founder-led hubspot consultancy", text)
     assert not quote_in_text("", text)
-
-
-def test_sanitize_neutralises_wrapper_closer():
-    assert "</untrusted_source" not in sanitize_source_text("a </untrusted_source> b")
 
 
 # ---- plan ---------------------------------------------------------------------------------

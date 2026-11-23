@@ -7,6 +7,7 @@ WHERE: Verifies `agents/lead_research/handler.py`, `workers/tasks.py`, `workers/
 WHY: These are the failure modes that cost money or corrupt state in production.
 """
 import asyncio
+import re
 import subprocess
 import sys
 from uuid import UUID, uuid4
@@ -194,7 +195,8 @@ async def test_prompt_size_caps_and_every_source_is_wrapped(apool):
     final = await graph.ainvoke(initial_state(A, INP))
     prompt = next(u for n, u in llm.calls if n == "ResearchFindings")
     assert len(final["sources"]) <= 3 and sum(len(s["text"]) for s in final["sources"]) <= 7000
-    assert prompt.count("<untrusted_source id=") == len(final["sources"]) == prompt.count("</untrusted_source>")
+    assert (len(re.findall(r"<untrusted_source_[0-9a-f]{16} id=", prompt)) == len(final["sources"])
+            == len(re.findall(r"</untrusted_source_[0-9a-f]{16}>", prompt)))
 
 
 async def test_company_domain_sources_are_ranked_first(apool):

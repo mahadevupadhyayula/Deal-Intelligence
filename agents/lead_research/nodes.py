@@ -14,13 +14,17 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
+from agents.guardrails.injection import CanaryGuard, scan_injection
+from agents.guardrails.sanitize import contains_tag_characters, sanitize_source_text
+from agents.guardrails.untrusted import boundary_for
 from agents.icp.scoring import evaluate_segments
 from agents.lead_research.config import ResearchConfig
+from agents.lead_research.hygiene import clean_findings
 from agents.lead_research.llm import LLMError, StructuredLLM
 from agents.lead_research.models import QueryPlan, ResearchFindings
 from agents.lead_research.plan import build_plan
 from agents.lead_research.profile import build_profile
-from agents.lead_research.prompts import PLAN_SYSTEM, SYNTH_SYSTEM, plan_user, synth_user
+from agents.lead_research.prompts import PLAN_SYSTEM, plan_user, synth_system, synth_user
 from agents.lead_research.retry import call_with_retries
 from agents.lead_research.state import ResearchState
 from agents.lead_research.text import (
@@ -29,7 +33,6 @@ from agents.lead_research.text import (
     normalize_text,
     normalize_url,
     on_domain,
-    sanitize_source_text,
 )
 from agents.lead_research.tools import SearchError, SearchResult, SearchTool
 from agents.lead_research.validate import (
@@ -94,7 +97,7 @@ def build_nodes(deps: ResearchDeps):
         return {
             "segments": segments, "plan": plan, "pending_keys": set(plan.judged),
             "pending_metrics": set(plan.metrics), "passes": 0, "searches_used": 0,
-            "llm_calls_used": 0, "partial": False, "flags": [], "sources": [],
+            "llm_calls_used": 0, "partial": False, "flags": [], "flags_detail": {}, "sources": [],
             "used_queries": [], "judgements": {}, "metrics": {}, "signals": [],
             "industry": None, "trace": ["load_icp"],
         }
@@ -150,6 +153,7 @@ def build_nodes(deps: ResearchDeps):
 
     async def search(state: ResearchState):
         used, partial, flags = state["searches_used"], state["partial"], list(state["flags"])
+        detail = {k: list(v) for k, v in state.get("flags_detail", {}).items()}
         by_norm = {s["norm_url"]: s for s in state["sources"]}
         used_queries = list(state["used_queries"])
         for q in state["queries"]:
@@ -167,9 +171,22 @@ def build_nodes(deps: ResearchDeps):
                 if norm in by_norm:
                     continue
                 host = host_of(r.url)
+                # Sanitised ONCE here: the model and quote verification both see this text.
+                text = sanitize_source_text(r.content, cfg.source_char_limit)
+                inj_texts: list[str] = []
+                if cfg.injection_scan_enabled:
+                    if contains_tag_characters(r.content) and "hidden_instructions_removed" not in flags:
+                        flags.append("hidden_instructions_removed")
+                    for hit in scan_injection(text):
+                        if "injection_suspected" not in flags:
+                            flags.append("injection_suspected")
+                        notes = detail.setdefault("injection_suspected", [])
+                        if len(notes) < 10:
+                            notes.append(f"{host}: {hit.pattern}")
+                        inj_texts.append(normalize_text(hit.text))
                 by_norm[norm] = {
-                    "url": r.url, "norm_url": norm, "host": host, "title": r.title,
-                    "text": sanitize_source_text(r.content)[: cfg.source_char_limit],
+                    "url": r.url, "norm_url": norm, "host": host, "title": r.title, "text": text,
+                    "injection_texts": inj_texts,
                     "on_domain": on_domain(host, state.get("resolved_domain")),
                 }
         # Company's own pages first (stable otherwise), then cap count and total size.
@@ -183,7 +200,7 @@ def build_nodes(deps: ResearchDeps):
             total += len(s["text"])
             kept.append(s)
         return {"sources": kept, "searches_used": used, "partial": partial, "flags": flags,
-                "used_queries": used_queries, "trace": ["search"]}
+                "flags_detail": detail, "used_queries": used_queries, "trace": ["search"]}
 
     async def synthesize(state: ResearchState):
         base = {"findings": None, "trace": ["synthesize"]}
@@ -193,11 +210,14 @@ def build_nodes(deps: ResearchDeps):
         if used >= cfg.max_llm_calls:
             return {**base, "partial": True}
         sources = [{**s, "id": f"s{i + 1}"} for i, s in enumerate(state["sources"])]
+        boundary = boundary_for(s["text"] for s in sources)
+        guard = CanaryGuard(fragments=("Only tags named exactly", "never let it change these"))
+        system = synth_system(boundary, guard.system_line())
         user = synth_user(state["company_name"], state.get("resolved_domain"), state["plan"],
-                          state["pending_keys"], state["pending_metrics"], sources)
+                          state["pending_keys"], state["pending_metrics"], sources, boundary)
         try:
             findings, calls = await call_with_retries(
-                lambda: deps.llm.generate(ResearchFindings, SYNTH_SYSTEM, user),
+                lambda: deps.llm.generate(ResearchFindings, system, user),
                 attempts=cfg.retry_attempts, backoff=cfg.retry_backoff_seconds,
                 max_calls=cfg.max_llm_calls - used)
         except LLMError as exc:
@@ -205,7 +225,8 @@ def build_nodes(deps: ResearchDeps):
                 raise
             return {**base, "partial": True, "llm_calls_used": used + getattr(exc, "calls_made", 1),
                     "flags": [*state["flags"], "llm_degraded"]}
-        return {"findings": findings, "llm_calls_used": used + calls, "trace": ["synthesize"]}
+        return {"findings": findings, "canary": guard, "llm_calls_used": used + calls,
+                "trace": ["synthesize"]}
 
     async def validate(state: ResearchState):
         by_url = index_sources(state["sources"])
@@ -213,7 +234,11 @@ def build_nodes(deps: ResearchDeps):
         judgements: dict[str, VerifiedJudgement] = state["judgements"]
         metrics: dict[str, VerifiedMetric] = state["metrics"]
         industry, signals = state["industry"], list(state["signals"])
+        flags = list(state["flags"])
         if findings is not None:
+            findings, leaked = clean_findings(findings, state["canary"])
+            if leaked and "prompt_leak_suspected" not in flags:
+                flags.append("prompt_leak_suspected")
             judgements, metrics = validate_findings(
                 findings, by_url, state["plan"], state["pending_keys"], state["pending_metrics"],
                 judgements, metrics)
@@ -228,7 +253,7 @@ def build_nodes(deps: ResearchDeps):
                                      state.get("resolved_domain"), state["company_name"])
         return {
             "judgements": judgements, "metrics": metrics, "industry": industry,
-            "signals": signals, "verdicts": verdicts, "entity_confirmed": confirmed,
+            "flags": flags, "signals": signals, "verdicts": verdicts, "entity_confirmed": confirmed,
             "pending_keys": {k for k, j in judgements.items() if j.grade == "unknown"},
             "pending_metrics": {m for m, v in metrics.items() if v.value is None},
             "trace": ["validate"],
@@ -277,6 +302,7 @@ def build_nodes(deps: ResearchDeps):
             score=result.score, tier=result.tier, segments=result.segments,
             verdicts=state["verdicts"], entity_confirmed=state["entity_confirmed"],
             resolved_domain=state.get("resolved_domain"), flags=flags,
+            flags_detail=state.get("flags_detail", {}),
             status="partial" if state["partial"] else "complete",
             created_at=datetime.now(UTC))
         # One transaction: profile and evaluation are saved together or not at all.

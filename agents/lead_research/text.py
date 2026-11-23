@@ -5,8 +5,7 @@ against what was actually fetched.
 WHERE: Used by source building (`nodes.py`) and evidence verification (`validate.py`).
 WHY: LLMs re-type URLs (trailing slash, `www.`, tracking params) and quotes (curly quotes,
 collapsed whitespace). Matching on normalised forms rejects fabrication without rejecting
-harmless formatting differences. Source text is also sanitised so fetched content cannot
-close our `<untrusted_source>` wrapper and break out of it.
+harmless formatting differences. (Source-text sanitising now lives in `agents/guardrails/sanitize.py`, Spec 006.)
 """
 import re
 from urllib.parse import parse_qsl, urlencode, urlsplit
@@ -49,7 +48,3 @@ def quote_in_text(quote: str, normalized_text: str) -> bool:
     q = normalize_text(quote)
     return len(q) > 0 and q in normalized_text
 
-
-def sanitize_source_text(text: str) -> str:
-    # Prevent fetched text from closing our wrapper tag and escaping the "data" region.
-    return text.replace("</untrusted_source", "[/untrusted_source")

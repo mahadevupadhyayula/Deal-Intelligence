@@ -5,6 +5,9 @@ WHERE: The only way clients start agent work; the worker (workers/tasks.py) exec
 WHY: The handler does O(1) work: insert a row, push a tiny message, return. Nothing slow
 runs here, so latency is independent of how long the agent takes. The ARQ message holds
 only (tenant_id, job_id); the payload stays in Postgres so Redis never stores tenant data.
+Admission (Spec 006) runs first: a per-tenant rate limit (Redis), then, under a per-tenant
+advisory lock, an active-job cap and the daily provider quota (Postgres), so concurrent
+requests cannot jointly exceed a limit. Rejections are 429 with Retry-After.
 Trade-off: DB insert and enqueue are not atomic. If Redis fails after the insert we mark
 the job failed and return 503 (simple, honest); an outbox is a later upgrade.
 """
@@ -15,7 +18,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
 from redis.exceptions import RedisError
 
-from agents.job_kinds import JOB_KINDS
+from agents.guardrails.limits import RateLimiter, Rejection, check_admission, lock_tenant
+from agents.job_kinds import JOB_KINDS, PROVIDER_KINDS
 from agents.repos.async_session import AsyncTenantSession
 from agents.repos.job import JobRepo
 from agents.schemas.job import JobStatus
@@ -51,6 +55,12 @@ class JobOut(BaseModel):
     error: str | None
 
 
+def _too_many(r: Rejection) -> HTTPException:
+    # Names the limit hit and when to retry; reveals nothing about other tenants.
+    return HTTPException(429, {"error": r.code, "message": r.message},
+                         headers={"Retry-After": str(r.retry_after)})
+
+
 @router.post("/jobs", status_code=202, response_model=JobAccepted)
 async def create_job(request: Request, tenant_id: str = Depends(current_tenant)):
     # Raw body so the size cap (413) applies before parsing; we validate by hand (422).
@@ -62,9 +72,22 @@ async def create_job(request: Request, tenant_id: str = Depends(current_tenant))
     except ValidationError as exc:
         raise HTTPException(422, exc.errors(include_url=False, include_context=False)) from exc
 
+    limits = request.app.state.limits
+    try:
+        rejected = await RateLimiter(request.app.state.arq, limits.rate_per_minute).check(tenant_id)
+    except (RedisError, OSError) as exc:  # fail closed: enqueueing needs Redis anyway
+        raise HTTPException(503, "rate limiter unavailable") from exc
+    if rejected:
+        raise _too_many(rejected)
+
     pool, job_id = request.app.state.pool, uuid4()
     async with pool.connection() as conn, AsyncTenantSession(conn, tenant_id) as s:
-        await JobRepo(s).create(job_id, body.kind, body.payload)
+        await lock_tenant(s)  # serialise count-then-insert for this tenant
+        rejected = await check_admission(s, limits, body.kind in PROVIDER_KINDS)
+        if rejected is None:
+            await JobRepo(s).create(job_id, body.kind, body.payload)
+    if rejected:
+        raise _too_many(rejected)
     # Row is committed before enqueue, so the worker can never see a message without a row.
 
     try:

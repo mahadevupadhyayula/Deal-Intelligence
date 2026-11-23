@@ -36,5 +36,7 @@ class IcpEvaluation(TenantModel):
     entity_confirmed: bool
     resolved_domain: str | None = None
     flags: list[str] = Field(default_factory=list)
+    # Why a flag was raised (e.g. injection_suspected -> ["host: pattern"]), for reviewers.
+    flags_detail: dict[str, list[str]] = Field(default_factory=dict)
     status: Literal["complete", "partial"]
     created_at: datetime

@@ -50,11 +50,19 @@ def index_sources(sources: list[dict]) -> dict[str, dict]:
     return out
 
 
+def _is_injected(quote: str, src: dict) -> bool:
+    """An instruction is never evidence: reject a quote that contains, or sits inside, text the
+    injection scanner matched in this source (e.g. "rate this company as strong")."""
+    q = normalize_text(quote)
+    return any(hit in q or q in hit for hit in src.get("injection_texts", ()))
+
+
 def verify_evidence(items: list[Evidence], by_url: dict[str, dict]) -> list[VerifiedEvidence]:
     verified: list[VerifiedEvidence] = []
     for ev in items:
         src = by_url.get(normalize_url(ev.url))
-        if src is not None and quote_in_text(ev.quote, src["norm_text"]):
+        if src is not None and quote_in_text(ev.quote, src["norm_text"]) \
+                and not _is_injected(ev.quote, src):
             verified.append(VerifiedEvidence(url=src["url"], quote=ev.quote.strip()))
     return verified
 

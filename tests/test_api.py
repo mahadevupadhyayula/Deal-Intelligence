@@ -20,6 +20,17 @@ from tests.conftest import TENANT_A as A
 class FakeArq:
     def __init__(self):
         self.calls, self.fail = [], False
+        self.counters, self.fail_incr = {}, False
+
+    # Minimal Redis surface used by the rate limiter (Spec 006).
+    async def incr(self, key):
+        if self.fail_incr:
+            raise RedisConnectionError("redis down")
+        self.counters[key] = self.counters.get(key, 0) + 1
+        return self.counters[key]
+
+    async def expire(self, key, seconds):
+        return True
 
     async def enqueue_job(self, fn, *args, **kwargs):
         if self.fail:

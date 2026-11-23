@@ -20,6 +20,7 @@ class ResearchConfig:
     max_total_chars: int = 40000
     retry_attempts: int = 2
     retry_backoff_seconds: float = 1.0
+    injection_scan_enabled: bool = True
 
     @classmethod
     def from_settings(cls, s: Settings) -> "ResearchConfig":
@@ -29,4 +30,5 @@ class ResearchConfig:
             source_char_limit=s.research_source_char_limit,
             max_total_chars=s.research_max_total_chars, retry_attempts=s.research_retry_attempts,
             retry_backoff_seconds=s.research_retry_backoff_seconds,
+            injection_scan_enabled=s.injection_scan_enabled,
         )

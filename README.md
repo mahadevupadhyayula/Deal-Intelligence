@@ -48,7 +48,7 @@ Each agent is built, hardened, evaluated, deployed and given a UI **before the n
 |------|------|-------|--------|
 | Build | 004 | ICP segments, versioning & deterministic scoring | Done |
 | Build | 005 | Lead Research agent with ICP evaluation (LangGraph) | Done |
-| Harden (shared) | 006 | Prompt-injection guardrails library, per-tenant rate limits and cost quotas, log/trace redaction; applied to Lead Research | Planned |
+| Harden (shared) | 006 | Prompt-injection guardrails library, per-tenant rate limits and cost quotas, log/trace redaction; applied to Lead Research | Done |
 | Evaluate (shared) | 007 | Eval harness: golden datasets, adversarial corpus, labelled calibration set, LangSmith evals | Planned |
 | Deploy: local | 008 | Docker images + `docker compose` full stack (api, worker, migrate, Postgres, Redis) | Planned |
 | Deploy: local | 009 | Observability: structured logs, metrics (queue depth, job latency, LLM cost), OpenTelemetry/LangSmith wiring | Planned |
@@ -95,6 +95,7 @@ After the local stack and the Terraform plan are validated, a real `terraform ap
 | 2026-11-20 | 03 | 003 | PASS (59) | N/A | PASS | [log](docs/build-logs/2026-11-20-day-03.md) |
 | 2026-11-20 | 04 | 004 | PASS (143) | N/A | PASS | [log](docs/build-logs/2026-11-20-day-04.md) |
 | 2026-11-20 | 05 | 005 | PASS (243) | PASS (17 golden) | PASS live 2026-11-22 (calibration not run) | [log](docs/build-logs/2026-11-22-day-06.md) |
+| 2026-11-23 | 07 | 006 | PASS (297) | PASS (22 golden + adversarial) | PASS live 2026-11-23 | [log](docs/build-logs/2026-11-23-day-07.md) |
 
 ## Workflow
 

@@ -14,11 +14,15 @@ from fastapi import FastAPI
 from psycopg_pool import AsyncConnectionPool
 
 from agents.config import get_settings
+from agents.guardrails.limits import Limits
+from agents.guardrails.redact import install_log_redaction
 from api.routes import health, icp, jobs, leads
 
 
-def create_app(pool: AsyncConnectionPool | None = None, arq=None) -> FastAPI:
+def create_app(pool: AsyncConnectionPool | None = None, arq=None,
+               limits: Limits | None = None) -> FastAPI:
     settings = get_settings()
+    install_log_redaction()  # logs may echo provider errors; redact secret shapes (Spec 006)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -37,6 +41,7 @@ def create_app(pool: AsyncConnectionPool | None = None, arq=None) -> FastAPI:
 
     app = FastAPI(title="Deal Intelligence API", lifespan=lifespan)
     app.state.max_payload_bytes = settings.job_payload_max_bytes
+    app.state.limits = limits or Limits.from_settings(settings)
     if pool is not None:
         app.state.pool = pool
     if arq is not None:

@@ -8,3 +8,7 @@ fast and its dependency surface narrow. Adding a kind means adding it here AND i
 """
 
 JOB_KINDS: frozenset[str] = frozenset({"echo", "lead_research"})
+
+# Kinds that spend provider budget (LLM/search): only these are subject to the daily quotas
+# and metered (Spec 006). `echo` is free, so it is never blocked by an exhausted quota.
+PROVIDER_KINDS: frozenset[str] = frozenset({"lead_research"})

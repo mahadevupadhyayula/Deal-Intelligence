@@ -41,6 +41,14 @@ class Settings(BaseSettings):
     research_run_timeout_seconds: float = 270  # inner limit, below ARQ's
     job_timeout_seconds: int = 300  # ARQ's outer limit
 
+    # --- Shared guardrails (Spec 006) ---
+    rate_limit_jobs_per_minute: int = 30
+    tenant_max_active_jobs: int = 10  # queued + running
+    tenant_daily_max_llm_calls: int = 500  # per tenant per UTC day
+    tenant_daily_max_searches: int = 500
+    trace_redaction: bool = True
+    injection_scan_enabled: bool = True
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -72,7 +72,7 @@ State (`TypedDict`): `tenant_id, lead_id, job_id, company_name, domain, segments
 - Profile `confidence` = `0.4·min(n_verified_sources,3)/3 + 0.4·(filled_fields/4) + 0.2·(domain confirmed)`, clamped to [0,1]; computed, not LLM-reported.
 - Design notes: one combined `synthesize` call halves cost and grounds verdicts in the same evidence; judging distinct criteria once avoids inconsistent grades for the same attribute across segments; the pessimistic/optimistic bound makes "should we research more?" a cheap deterministic decision instead of a heuristic.
 
-### 5. Prompt-injection baseline (full guardrails are Spec 006)
+### 5. Prompt-injection baseline (superseded in part by Spec 006: nonce delimiters, sanitising, injection flags, evidence-overlap rule, canary; see that spec)
 - Fetched text is wrapped as `<untrusted_source id=… url=…>…</untrusted_source>`; the system prompt says contents are data, never instructions (including claims about ICP fit).
 - The synthesis call has **no tools**; output must validate against `ResearchFindings`. The LLM cannot set score, tier, tenant or segment; those are computed or stamped in code.
 - Quote verification means injected text cannot create evidence out of thin air, and cannot fabricate a quote that is not on a fetched page.

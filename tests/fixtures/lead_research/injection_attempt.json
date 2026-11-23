@@ -85,7 +85,8 @@
     ],
     "status": "complete",
     "flags": [
-      "entity_unconfirmed"
+      "entity_unconfirmed",
+      "injection_suspected"
     ],
     "entity_confirmed": false,
     "llm_calls": 2,

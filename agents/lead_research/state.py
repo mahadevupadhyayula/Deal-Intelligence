@@ -26,6 +26,8 @@ class ResearchState(TypedDict, total=False):
     llm_calls_used: int
     partial: bool
     flags: list[str]
+    flags_detail: dict
+    canary: Any  # CanaryGuard for the current synthesize call
     queries: list[str]
     used_queries: list[str]
     sources: list[dict]
