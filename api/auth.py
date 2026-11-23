@@ -8,6 +8,7 @@ request to a tenant server-side. All failures return the same 401 (no key enumer
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from agents.observability.logging import bind_context, hash_tenant
 from agents.security import hash_api_key
 
 _bearer = HTTPBearer(auto_error=False)
@@ -30,4 +31,7 @@ async def current_tenant(
         row = await cur.fetchone()
     if row is None:
         raise unauthorized
+    # Hashed tenant for logs: the access line reads it from request.state; handler logs from context.
+    request.state.tenant_hash = hash_tenant(row[0])
+    bind_context(tenant=request.state.tenant_hash)
     return row[0]

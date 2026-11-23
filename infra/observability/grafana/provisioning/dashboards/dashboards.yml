@@ -1,0 +1,7 @@
+# WHAT:  Tells Grafana to load dashboard JSON files from disk (Spec 009).
+apiVersion: 1
+providers:
+  - name: deal-intelligence
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

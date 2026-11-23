@@ -1,0 +1,10 @@
+# WHAT:  Grafana datasource provisioning (Spec 009). WHERE: mounted into `grafana`.
+# WHY:   Provisioned (not clicked together) so a fresh `up` shows data with no manual steps.
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true

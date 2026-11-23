@@ -20,6 +20,8 @@ from redis.exceptions import RedisError
 
 from agents.guardrails.limits import RateLimiter, Rejection, check_admission, lock_tenant
 from agents.job_kinds import JOB_KINDS, PROVIDER_KINDS
+from agents.observability import metrics
+from agents.observability.logging import bind_context
 from agents.repos.async_session import AsyncTenantSession
 from agents.repos.job import JobRepo
 from agents.schemas.job import JobStatus
@@ -55,8 +57,13 @@ class JobOut(BaseModel):
     error: str | None
 
 
+_REASON = {"rate_limited": "rate", "too_many_active_jobs": "active_cap",
+           "daily_quota_exceeded": "daily_quota"}
+
+
 def _too_many(r: Rejection) -> HTTPException:
     # Names the limit hit and when to retry; reveals nothing about other tenants.
+    metrics.count_rejection(_REASON.get(r.code, "other"))
     return HTTPException(429, {"error": r.code, "message": r.message},
                          headers={"Retry-After": str(r.retry_after)})
 
@@ -66,6 +73,7 @@ async def create_job(request: Request, tenant_id: str = Depends(current_tenant))
     # Raw body so the size cap (413) applies before parsing; we validate by hand (422).
     raw = await request.body()
     if len(raw) > request.app.state.max_payload_bytes:
+        metrics.count_rejection("payload")
         raise HTTPException(413, "payload too large")
     try:
         body = JobCreate.model_validate_json(raw)
@@ -81,6 +89,7 @@ async def create_job(request: Request, tenant_id: str = Depends(current_tenant))
         raise _too_many(rejected)
 
     pool, job_id = request.app.state.pool, uuid4()
+    bind_context(job_id=str(job_id), kind=body.kind)
     async with pool.connection() as conn, AsyncTenantSession(conn, tenant_id) as s:
         await lock_tenant(s)  # serialise count-then-insert for this tenant
         rejected = await check_admission(s, limits, body.kind in PROVIDER_KINDS)

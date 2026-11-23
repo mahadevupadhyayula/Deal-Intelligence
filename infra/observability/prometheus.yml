@@ -1,0 +1,17 @@
+# WHAT:  Prometheus scrape config for the local stack (Spec 009).
+# WHERE: Mounted read-only into the `prometheus` service (compose profile `observability`).
+# WHY:   Workers scale (`--scale worker=N`), so they are found by DNS: the service name resolves
+#        to every replica's IP and Prometheus scrapes each one. Metrics ports are internal to the
+#        compose network and never published to the host.
+global:
+  scrape_interval: 5s
+scrape_configs:
+  - job_name: api
+    static_configs:
+      - targets: ["api:9101"]
+  - job_name: worker
+    dns_sd_configs:
+      - names: ["worker"]
+        type: A
+        port: 9100
+        refresh_interval: 5s

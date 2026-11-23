@@ -9,7 +9,7 @@ secrets out of `repr`/logs.
 """
 from functools import lru_cache
 
-from pydantic import SecretStr
+from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -50,6 +50,20 @@ class Settings(BaseSettings):
     tenant_daily_max_searches: int = 500
     trace_redaction: bool = True
     injection_scan_enabled: bool = True
+
+    # --- Observability (Spec 009) ---
+    log_format: str = "text"  # "json" in containers
+    log_level: str = "INFO"
+    log_hash_key: SecretStr | None = None  # keys the tenant hash in logs/traces; share across services
+    metrics_enabled: bool = True
+    metrics_bind_host: str = "127.0.0.1"  # compose sets 0.0.0.0 (internal network only)
+    worker_metrics_port: int = 9100
+    api_metrics_port: int = 9101
+    # Flat per-call prices for the cost ESTIMATE; EVAL_PRICE_* are read as a fallback.
+    price_per_llm_call: float = Field(0.01, validation_alias=AliasChoices(
+        "PRICE_PER_LLM_CALL", "EVAL_PRICE_PER_LLM_CALL"))
+    price_per_search: float = Field(0.008, validation_alias=AliasChoices(
+        "PRICE_PER_SEARCH", "EVAL_PRICE_PER_SEARCH"))
 
     # --- Eval harness (Spec 007) ---
     eval_default_repeats: int = 3

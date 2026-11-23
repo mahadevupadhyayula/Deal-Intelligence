@@ -148,10 +148,10 @@ def test_worker_health_check_interval_set():
 @pytest.mark.skipif(shutil.which("docker") is None, reason="docker not installed")
 def test_compose_config_validates(tmp_path):
     env = tmp_path / "e.env"
-    env.write_text("POSTGRES_PASSWORD=x\nAPP_USER_PASSWORD=y\n")
+    env.write_text("POSTGRES_PASSWORD=x\nAPP_USER_PASSWORD=y\nLOG_HASH_KEY=z\n")
     out = subprocess.run(
         ["docker", "compose", "--env-file", str(env), "-f", str(ROOT / "docker-compose.yml"),
-         "--profile", "tools", "config", "-q"], capture_output=True, text=True, timeout=60, check=False)
+         "--profile", "tools", "--profile", "observability", "config", "-q"], capture_output=True, text=True, timeout=60, check=False)
     if "Cannot connect to the Docker daemon" in out.stderr:
         pytest.skip("docker daemon not running")
     assert out.returncode == 0, out.stderr

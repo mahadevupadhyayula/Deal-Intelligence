@@ -128,6 +128,8 @@ packaging==26.3
     #   langsmith
 pgvector==0.5.1
     # via deal-intelligence (pyproject.toml)
+prometheus-client==0.26.0
+    # via deal-intelligence (pyproject.toml)
 psycopg==3.3.9
     # via deal-intelligence (pyproject.toml)
 psycopg-binary==3.3.9

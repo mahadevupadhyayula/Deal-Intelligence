@@ -7,6 +7,7 @@ all jobs it runs. Search/LLM are only built when configured, so a worker without
 credentials still starts and runs other kinds; `lead_research` jobs then fail with a clear
 message. `max_tries=1`: no automatic retries yet (see tasks.py). The function-level timeout
 is ARQ's OUTER limit; `run_job` enforces a shorter inner one.
+Spec 009: JSON logging and a Prometheus listener (daemon thread) start in `startup`.
 """
 from typing import ClassVar
 
@@ -17,6 +18,8 @@ from psycopg_pool import AsyncConnectionPool
 from agents.config import get_settings
 from agents.guardrails.redact import install_log_redaction, register_secret
 from agents.guardrails.tracing import configure_trace_redaction
+from agents.observability.logging import configure_logging
+from agents.observability.metrics import WORKER_UP, start_metrics_server
 from workers.tasks import run_job
 
 _settings = get_settings()
@@ -35,6 +38,11 @@ def _register_secrets() -> None:
 
 async def startup(ctx: dict) -> None:
     install_log_redaction()
+    configure_logging("worker")  # after arq's own logging setup, so ours wins
+    if _settings.metrics_enabled:
+        ctx["metrics_server"] = start_metrics_server(
+            _settings.worker_metrics_port, _settings.metrics_bind_host)
+        WORKER_UP.set(1)
     _register_secrets()
     if _settings.trace_redaction:
         configure_trace_redaction()
@@ -51,6 +59,9 @@ async def startup(ctx: dict) -> None:
 
 
 async def shutdown(ctx: dict) -> None:
+    WORKER_UP.set(0)
+    if ctx.get("metrics_server") is not None:
+        ctx["metrics_server"].shutdown()
     await ctx["pool"].close()
 
 

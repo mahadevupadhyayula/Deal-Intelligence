@@ -51,7 +51,7 @@ Each agent is built, hardened, evaluated, deployed and given a UI **before the n
 | Harden (shared) | 006 | Prompt-injection guardrails library, per-tenant rate limits and cost quotas, log/trace redaction; applied to Lead Research | Done |
 | Evaluate (shared) | 007 | Eval harness: golden datasets, adversarial corpus, labelled calibration set, LangSmith evals | Done |
 | Deploy: local | 008 | Docker images + `docker compose` full stack (api, worker, migrate, Postgres, Redis) | Done |
-| Deploy: local | 009 | Observability: structured logs, metrics (queue depth, job latency, LLM cost), OpenTelemetry/LangSmith wiring | Planned |
+| Deploy: local | 009 | Observability: structured logs, metrics (queue depth, job latency, LLM cost estimate), LangSmith run correlation, optional Prometheus + Grafana (OpenTelemetry deferred) | Done |
 | Deploy: local | 010 | Local Kubernetes (kind): manifests + KEDA queue-depth autoscaling, runs on the laptop | Planned |
 | Deploy: cloud sim | 011 | Terraform (VPC, EKS, RDS, ElastiCache, IRSA) written and validated with `terraform plan` only; **no apply, no cost** | Planned |
 | UI | 012 | Streamlit: ICP editor, lead list, evaluation view | Planned |
@@ -98,6 +98,7 @@ After the local stack and the Terraform plan are validated, a real `terraform ap
 | 2026-11-23 | 07 | 006 | PASS (297) | PASS (22 golden + adversarial) | PASS live 2026-11-23 | [log](docs/build-logs/2026-11-23-day-07.md) |
 | 2026-11-23 | 08 | 007 | PASS (347) | PASS (22 golden scripted + 28 adversarial + 10 judgement frozen) | PASS live 2026-11-23 (calibration not run) | [log](docs/build-logs/2026-11-23-day-08.md) |
 | 2026-11-23 | 09 | 008 | PASS (367) | N/A (golden 22/22 in the image as evidence) | PASS live 2026-11-23 (31/31 smoke checks) | [log](docs/build-logs/2026-11-23-day-09.md) |
+| 2026-11-23 | 10 | 009 | PASS (389) | N/A (golden 22/22 unchanged as evidence) | PASS live 2026-11-23 (29/29 observability smoke; 31/31 compose smoke re-run) | [log](docs/build-logs/2026-11-23-day-10.md) |
 
 ## Workflow
 

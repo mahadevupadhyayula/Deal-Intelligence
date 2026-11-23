@@ -17,6 +17,7 @@ dependencies = [
     "langchain-core>=0.3",
     "langsmith>=0.1",
     "tavily-python>=0.5",
+    "prometheus-client>=0.20",
 ]
 
 [project.optional-dependencies]
