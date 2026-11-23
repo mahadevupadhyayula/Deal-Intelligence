@@ -14,6 +14,8 @@ type + message.
 Spec 006: provider-using kinds re-check the daily quota before running (jobs may have queued
 before the limit was hit), run on METERED adapters, and their usage is flushed after the
 outcome, outside the timeout block, so timed-out and failed runs are still billed.
+Spec 008: a cancelled run (worker SIGTERM) is recorded as failed, not left `running`.
+Known gap: a hard kill (SIGKILL/OOM) cannot be caught; a stale-`running` reaper is a follow-up.
 """
 import asyncio
 from uuid import UUID
@@ -53,10 +55,17 @@ async def run_job(ctx: dict, tenant_id: str, job_id: str) -> None:
         pool=pool,
         search=MeteredSearch(search, meter) if search is not None else None,
         llm=MeteredLLM(llm, meter) if llm is not None else None)
+    cancelled = False
     try:
         async with asyncio.timeout(run_timeout):
             result = await JOB_HANDLERS[job.kind](job_ctx, tenant_id, job_id, job.payload)
         outcome = ("succeeded", result)
+    except asyncio.CancelledError:
+        # SIGTERM (deploy, scale-down) cancels the in-flight job. Found by the Spec 008 smoke test:
+        # without this the row stayed `running` forever, and stranded `running` rows count toward
+        # the tenant's active-job cap, eventually locking the tenant out. Record the outcome (and
+        # any provider usage) below, then re-raise so the worker still shuts down.
+        outcome, cancelled = ("failed", "worker stopped before the job finished; resubmit"), True
     except TimeoutError:
         outcome = ("failed", f"timed out after {run_timeout:g}s")
     except Exception as exc:  # noqa: BLE001 - a handler may raise anything; record it
@@ -69,3 +78,5 @@ async def run_job(ctx: dict, tenant_id: str, job_id: str) -> None:
             await JobRepo(s).mark_failed(jid, outcome[1])
         if job.kind in PROVIDER_KINDS and (meter.llm_calls or meter.searches):
             await UsageRepo(s).add(utc_today(), meter.llm_calls, meter.searches)
+    if cancelled:
+        raise asyncio.CancelledError

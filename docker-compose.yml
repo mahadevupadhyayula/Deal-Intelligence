@@ -1,0 +1,192 @@
+# WHAT:  The Slice 1 stack on one machine: Postgres+pgvector, Redis, a one-shot migration job,
+#        the API and a scalable ARQ worker, plus an on-demand `tools` container (Spec 008).
+# WHERE: Local deployment step 1. The same image and environment contract are reused by the
+#        kind/KEDA manifests (Spec 010) and the Terraform plan (Spec 011).
+# WHY:   Compose is the cheapest way to prove the image, startup order, health model and
+#        least-privilege secret wiring before adding Kubernetes. Key choices, in brief:
+#          * No `env_file`: every service lists exactly the variables it needs, so the
+#            superuser ADMIN_DATABASE_URL reaches only `migrate`/`tools`, and provider keys only
+#            `worker`/`tools`. A compromised API container holds neither.
+#          * Required passwords use `:?` so a missing value stops `up` instead of starting
+#            with an empty password. No secret value appears in this file.
+#          * Redis uses `noeviction`: queue, job state and rate-limit counters must never be
+#            silently evicted; `appendonly` + volume keep them across restarts.
+#          * Host ports are 127.0.0.1-only and default to 5433/6380 so they do not collide with
+#            other local Postgres/Redis containers. Services talk to each other by name on the
+#            standard ports inside the compose network.
+#          * `worker` has no container_name/ports, so `--scale worker=N` works (the local
+#            rehearsal of KEDA autoscaling).
+#        Passwords go into connection URLs, so use URL-safe characters (no @ : / ? #).
+
+name: deal-intelligence
+
+x-app-build: &app-build
+  context: .
+  dockerfile: infra/docker/Dockerfile
+  target: runtime
+
+# Hardening shared by every process we build (api, worker, migrate).
+x-hardened: &hardened
+  user: "10001:10001"
+  read_only: true
+  tmpfs:
+    - /tmp
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: deal_intel
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d deal_intel"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redisdata:/data
+    ports:
+      - "127.0.0.1:${REDIS_HOST_PORT:-6380}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  migrate:
+    # The one service that builds the shared image; api and worker only reference it (two
+    # services building the same tag in parallel race). They start after migrate, so it exists.
+    <<: *hardened
+    build: *app-build
+    image: deal-intelligence:local
+    command: ["python", "-m", "agents.migrate"]
+    environment:
+      # Superuser URL: DDL only, and only in this one-shot container.
+      ADMIN_DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/deal_intel
+      DATABASE_URL: postgresql://app_user:${APP_USER_PASSWORD:?set APP_USER_PASSWORD in .env}@postgres:5432/deal_intel
+      APP_USER_PASSWORD: ${APP_USER_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    <<: *hardened
+    image: deal-intelligence:local
+    pull_policy: never
+    command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      APP_ENV: local
+      DATABASE_URL: postgresql://app_user:${APP_USER_PASSWORD}@postgres:5432/deal_intel
+      REDIS_URL: redis://redis:6379/0
+      RATE_LIMIT_JOBS_PER_MINUTE: ${RATE_LIMIT_JOBS_PER_MINUTE:-30}
+      TENANT_MAX_ACTIVE_JOBS: ${TENANT_MAX_ACTIVE_JOBS:-10}
+      TENANT_DAILY_MAX_LLM_CALLS: ${TENANT_DAILY_MAX_LLM_CALLS:-500}
+      TENANT_DAILY_MAX_SEARCHES: ${TENANT_DAILY_MAX_SEARCHES:-500}
+    ports:
+      - "127.0.0.1:${API_HOST_PORT:-8000}:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # Liveness only (/healthz): it must not depend on backends. Readiness is /readyz.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: ${API_MEM_LIMIT:-512m}
+          cpus: "${API_CPU_LIMIT:-1.0}"
+    restart: unless-stopped
+
+  worker:
+    <<: *hardened
+    image: deal-intelligence:local
+    pull_policy: never
+    command: ["arq", "workers.settings.WorkerSettings"]
+    environment:
+      APP_ENV: local
+      DATABASE_URL: postgresql://app_user:${APP_USER_PASSWORD}@postgres:5432/deal_intel
+      REDIS_URL: redis://redis:6379/0
+      # Provider settings: empty values leave lead research unconfigured (echo jobs still work).
+      LLM_MODEL: ${LLM_MODEL:-}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-deal-intelligence}
+      TENANT_DAILY_MAX_LLM_CALLS: ${TENANT_DAILY_MAX_LLM_CALLS:-500}
+      TENANT_DAILY_MAX_SEARCHES: ${TENANT_DAILY_MAX_SEARCHES:-500}
+      JOB_TIMEOUT_SECONDS: ${JOB_TIMEOUT_SECONDS:-300}
+      # 0 = the free echo job ignores `delay_seconds`; the smoke test enables it to watch scaling.
+      ECHO_MAX_DELAY_SECONDS: ${ECHO_MAX_DELAY_SECONDS:-0}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "arq", "--check", "workers.settings.WorkerSettings"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Observed in the Spec 008 smoke test: on SIGTERM ARQ cancels the in-flight job immediately
+    # (it does not drain), and run_job records it as failed ("worker stopped...; resubmit").
+    # A short grace period is enough for that bookkeeping; true draining is a Spec 010 item.
+    stop_grace_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: ${WORKER_MEM_LIMIT:-1g}
+          cpus: "${WORKER_CPU_LIMIT:-1.0}"
+    restart: unless-stopped
+
+  # On-demand operator/eval container: `docker compose run --rm tools python -m agents.admin ...`
+  tools:
+    <<: *hardened
+    profiles: ["tools"]
+    build:
+      <<: *app-build
+      target: tools
+    image: deal-intelligence-tools:local
+    command: ["python", "-m", "agents.admin"]
+    environment:
+      ADMIN_DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/deal_intel
+      DATABASE_URL: postgresql://app_user:${APP_USER_PASSWORD}@postgres:5432/deal_intel
+      REDIS_URL: redis://redis:6379/0
+      LLM_MODEL: ${LLM_MODEL:-}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-deal-intelligence}
+      EVAL_REPORT_DIR: /tmp/eval-reports  # root filesystem is read-only
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+  redisdata:

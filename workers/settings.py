@@ -60,3 +60,5 @@ class WorkerSettings:
     on_shutdown = shutdown
     redis_settings = RedisSettings.from_dsn(_settings.redis_url)
     max_tries = 1
+    # Lets `arq --check` (the container healthcheck) see a fresh heartbeat; the default is hourly.
+    health_check_interval = 30

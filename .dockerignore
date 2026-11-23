@@ -1,0 +1,19 @@
+# Build-context hygiene (Spec 008). The context is the repo root, so anything not excluded here
+# is sent to the Docker daemon. Secrets, local state and bulky artifacts must never be.
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.ruff_cache
+*.egg-info
+evals/reports
+docs
+frontend
+infra/terraform
+infra/k8s
+node_modules

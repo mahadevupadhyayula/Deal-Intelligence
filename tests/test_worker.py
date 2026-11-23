@@ -61,3 +61,62 @@ async def test_duplicate_delivery_is_noop(apool, monkeypatch):
     await run_job({"pool": apool}, A, str(jid))
     await run_job({"pool": apool}, A, str(jid))
     assert len(calls) == 1 and (await _get(apool, A, jid)).status == "succeeded"
+
+
+# ---- Spec 008: optional delay on the free echo job ------------------------------------------
+async def test_echo_delay_disabled_by_default(monkeypatch):
+    import time
+
+    from agents.config import get_settings
+    from agents.jobs import JobContext, echo
+
+    monkeypatch.delenv("ECHO_MAX_DELAY_SECONDS", raising=False)
+    get_settings.cache_clear()
+    t0 = time.monotonic()
+    out = await echo(JobContext(pool=None), "t", "j", {"delay_seconds": 5})
+    assert out == {"echo": {"delay_seconds": 5}} and time.monotonic() - t0 < 1
+
+
+async def test_echo_delay_is_clamped_to_the_cap(monkeypatch):
+    import time
+
+    from agents.config import get_settings
+    from agents.jobs import JobContext, echo
+
+    monkeypatch.setenv("ECHO_MAX_DELAY_SECONDS", "0.2")
+    get_settings.cache_clear()
+    try:
+        t0 = time.monotonic()
+        await echo(JobContext(pool=None), "t", "j", {"delay_seconds": 60})
+        assert 0.15 <= time.monotonic() - t0 < 2  # asked 60s, capped at 0.2s
+        t0 = time.monotonic()
+        await echo(JobContext(pool=None), "t", "j", {"delay_seconds": True})  # bool is not a delay
+        assert time.monotonic() - t0 < 0.1
+    finally:
+        monkeypatch.delenv("ECHO_MAX_DELAY_SECONDS")
+        get_settings.cache_clear()
+
+
+async def test_cancelled_job_is_recorded_failed_not_stranded_running(apool, monkeypatch):
+    """Worker SIGTERM cancels the in-flight job: the row must end `failed`, and the
+    cancellation must still propagate so the worker can exit (Spec 008 finding)."""
+    import asyncio
+
+    started = asyncio.Event()
+
+    async def slow(ctx, t, j, p):
+        started.set()
+        await asyncio.sleep(30)
+    monkeypatch.setitem(JOB_HANDLERS, "echo", slow)
+    jid = await _create(apool, A, {})
+    task = asyncio.create_task(run_job({"pool": apool}, A, str(jid)))
+    await started.wait()
+    assert (await _get(apool, A, jid)).status == "running"
+    task.cancel()
+    try:
+        await task
+        raised = False
+    except asyncio.CancelledError:
+        raised = True
+    job = await _get(apool, A, jid)
+    assert raised and job.status == "failed" and "worker stopped" in job.error

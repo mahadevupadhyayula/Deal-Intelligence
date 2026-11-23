@@ -8,6 +8,7 @@ in a context object keeps handlers testable (inject fakes) and avoids module-lev
 Handlers get `(ctx, tenant_id, job_id, payload)` and must never read tenant data without a
 tenant-bound session.
 """
+import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
@@ -24,5 +25,17 @@ JobHandler = Callable[[JobContext, str, str, dict[str, Any]], Awaitable[dict[str
 
 
 async def echo(ctx: JobContext, tenant_id: str, job_id: str, payload: dict[str, Any]) -> dict[str, Any]:
-    """Stub handler used to prove the plumbing end to end."""
+    """Stub handler used to prove the plumbing end to end.
+
+    Optional `delay_seconds` makes a free, slow job so deployment tests can watch queue depth,
+    scale-out and graceful shutdown without spending provider money (Spec 008, used by 010).
+    It is clamped to `ECHO_MAX_DELAY_SECONDS`, which defaults to 0 (disabled): a tenant must not
+    be able to hold a shared worker slot in production just because the stub accepts a delay.
+    """
+    from agents.config import get_settings
+
+    cap = get_settings().echo_max_delay_seconds
+    delay = payload.get("delay_seconds")
+    if cap > 0 and isinstance(delay, int | float) and not isinstance(delay, bool) and delay > 0:
+        await asyncio.sleep(min(float(delay), cap))
     return {"echo": payload}

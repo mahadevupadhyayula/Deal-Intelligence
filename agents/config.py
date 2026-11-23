@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     research_retry_backoff_seconds: float = 1.0
     research_run_timeout_seconds: float = 270  # inner limit, below ARQ's
     job_timeout_seconds: int = 300  # ARQ's outer limit
+    # Deployment-test knob for the free `echo` job (Spec 008): 0 disables the delay entirely.
+    echo_max_delay_seconds: float = 0
 
     # --- Shared guardrails (Spec 006) ---
     rate_limit_jobs_per_minute: int = 30
