@@ -1,0 +1,444 @@
+[
+  {
+    "id": "j-clear-fit-12",
+    "suite": "judgement",
+    "description": "Textbook primary fit, headcount stated.",
+    "tags": [
+      "judgement"
+    ],
+    "input": {
+      "company_name": "Acme Consulting",
+      "domain": "acme-consulting.example"
+    },
+    "corpus": {
+      "by_query": {},
+      "default": [
+        {
+          "url": "https://acme-consulting.example/about",
+          "title": "About Acme Consulting",
+          "content": "Acme Consulting is a founder-led HubSpot implementation consultancy based in Austin. Our team of 12 people delivers CRM migrations and RevOps projects for B2B SaaS companies."
+        },
+        {
+          "url": "https://acme-consulting.example/services",
+          "title": "Services",
+          "content": "Acme Consulting services: HubSpot onboarding, CRM data migration, workflow automation and reporting for B2B SaaS teams."
+        }
+      ]
+    },
+    "pass_rate": 0.66,
+    "checks": [
+      {
+        "name": "tier_in",
+        "args": {
+          "allowed": [
+            "strong",
+            "moderate"
+          ]
+        }
+      },
+      {
+        "name": "employee_count_is",
+        "args": {
+          "value": 12
+        }
+      },
+      {
+        "name": "entity_confirmed_is",
+        "args": {
+          "value": true
+        }
+      },
+      {
+        "name": "evidence_verified"
+      },
+      {
+        "name": "within_budget"
+      }
+    ]
+  },
+  {
+    "id": "j-clear-fit-18",
+    "suite": "judgement",
+    "description": "Primary fit at the top of the size band.",
+    "tags": [
+      "judgement"
+    ],
+    "input": {
+      "company_name": "Ledger Peak Partners",
+      "domain": "ledgerpeak.example"
+    },
+    "corpus": {
+      "by_query": {},
+      "default": [
+        {
+          "url": "https://ledgerpeak.example/about",
+          "title": "About",
+          "content": "Ledger Peak Partners is a founder-led HubSpot implementation consultancy in Chicago. We are 18 people who set up HubSpot for mid-market B2B teams."
+        },
+        {
+          "url": "https://ledgerpeak.example/work",
+          "title": "Our work",
+          "content": "Ledger Peak Partners HubSpot rollouts, data migrations and RevOps retainers for B2B companies."
+        }
+      ]
+    },
+    "pass_rate": 0.66,
+    "checks": [
+      {
+        "name": "tier_in",
+        "args": {
+          "allowed": [
+            "strong",
+            "moderate"
+          ]
+        }
+      },
+      {
+        "name": "employee_count_is",
+        "args": {
+          "value": 18
+        }
+      },
+      {
+        "name": "evidence_verified"
+      },
+      {
+        "name": "within_budget"
+      }
+    ]
+  },
+  {
+    "id": "j-clear-not-fit-bakery",
+    "suite": "judgement",
+    "description": "A bakery is not a fit.",
+    "tags": [
+      "judgement"
+    ],
+    "input": {
+      "company_name": "Independent Baking Co",
+      "domain": "independent-baking.example"
+    },
+    "corpus": {
+      "by_query": {},
+      "default": [
+        {
+          "url": "https://independent-baking.example/about",
+          "title": "About Independent Baking Co.",
+          "content": "Independent Baking Co. is a family-run artisan bakery in Portland, Oregon. We bake sourdough, croissants and seasonal pastries every morning and sell them at our shop and two farmers markets."
+        },
+        {
+          "url": "https://independent-baking.example/visit",
+          "title": "Visit us",
+          "content": "Open Tuesday to Sunday, 7am to 3pm. Wholesale orders for cafes are available on request. Our bakery employs a small team of bakers and counter staff."
+        }
+      ]
+    },
+    "pass_rate": 0.66,
+    "checks": [
+      {
+        "name": "tier_in",
+        "args": {
+          "allowed": [
+            "weak",
+            "not_fit",
+            "insufficient_data"
+          ]
+        }
+      },
+      {
+        "name": "evidence_verified"
+      },
+      {
+        "name": "within_budget"
+      }
+    ]
+  },
+  {
+    "id": "j-enterprise-si",
+    "suite": "judgement",
+    "description": "Large systems integrator: disqualifier.",
+    "tags": [
+      "judgement"
+    ],
+    "input": {
+      "company_name": "Meridian Global Systems",
+      "domain": "meridianglobal.example"
+    },
+    "corpus": {
+      "by_query": {},
+      "default": [
+        {
+          "url": "https://meridianglobal.example/about",
+          "title": "About",
+          "content": "Meridian Global Systems is a Fortune 500 enterprise systems integrator with 12,000 employees delivering ERP and CRM programs for global enterprises."
+        }
+      ]
+    },
+    "pass_rate": 0.66,
+    "checks": [
+      {
+        "name": "tier_in",
+        "args": {
+          "allowed": [
+            "weak",
+            "not_fit"
+          ]
+        }
+      },
+      {
+        "name": "evidence_verified"
+      },
+      {
+        "name": "within_budget"
+      }
+    ]
+  },
+  {
+    "id": "j-in-house-revops",
+    "suite": "judgement",
+    "description": "In-house RevOps team (a stated non-match).",
+    "tags": [
+      "judgement"
+    ],
+    "input": {
+      "company_name": "Northgate Software",
+      "domain": "northgatesoftware.example"
+    },
+    "corpus": {
+      "by_query": {},
+      "default": [
+        {
+          "url": "https://northgatesoftware.example/about",
+          "title": "About",
+          "content": "Northgate Software builds scheduling software. Our internal RevOps team of 9 manages HubSpot for our own sales and marketing."
+        }
+      ]
+    },
+    "pass_rate": 0.66,
+    "checks": [
+      {
+        "name": "tier_in",
+        "args": {
+          "allowed": [
+            "weak",
+            "not_fit",
+            "insufficient_data"
+          ]
+        }
+      },
+      {
+        "name": "evidence_verified"
+      },
+      {
+        "name": "within_budget"
+      }
+    ]
+  },
+  {
+    "id": "j-thin-evidence",
+    "suite": "judgement",
+    "description": "Consultancy mention with no size: must not guess a headcount.",
+    "tags": [
+      "judgement"
+    ],
+    "input": {
+      "company_name": "Northwind Advisors",
+      "domain": "northwind-advisors.example"
+    },
+    "corpus": {
+      "by_query": {},
+      "default": [
+        {
+          "url": "https://northwind-advisors.example/about",
+          "title": "About Northwind Advisors",
+          "content": "Northwind Advisors is a Denver company that helps growing teams with their sales technology and day-to-day CRM questions."
+        },
+        {
+          "url": "https://northwind-advisors.example/contact",
+          "title": "Contact",
+          "content": "Talk to us about your project. Northwind Advisors, Denver, Colorado."
+        }
+      ]
+    },
+    "pass_rate": 0.66,
+    "checks": [
+      {
+        "name": "tier_in",
+        "args": {
+          "allowed": [
+            "moderate",
+            "weak",
+            "not_fit",
+            "insufficient_data"
+          ]
+        }
+      },
+      {
+        "name": "employee_count_is",
+        "args": {
+          "value": null
+        }
+      },
+      {
+        "name": "evidence_verified"
+      },
+      {
+        "name": "within_budget"
+      }
+    ]
+  },
+  {
+    "id": "j-wrong-platform",
+    "suite": "judgement",
+    "description": "Salesforce (not HubSpot) consultancy: company-type must not be ideal.",
+    "tags": [
+      "judgement"
+    ],
+    "input": {
+      "company_name": "CloudBridge Partners",
+      "domain": "cloudbridge-sf.example"
+    },
+    "corpus": {
+      "by_query": {},
+      "default": [
+        {
+          "url": "https://cloudbridge-sf.example/about",
+          "title": "About",
+          "content": "CloudBridge Partners is a founder-led Salesforce implementation consultancy. Our team of 12 builds Salesforce orgs for B2B companies."
+        }
+      ]
+    },
+    "pass_rate": 0.66,
+    "checks": [
+      {
+        "name": "grade_in",
+        "args": {
+          "segment": "primary-seg",
+          "criterion": "company-type",
+          "allowed": [
+            "none",
+            "unknown",
+            "secondary"
+          ]
+        }
+      },
+      {
+        "name": "evidence_verified"
+      },
+      {
+        "name": "within_budget"
+      }
+    ]
+  },
+  {
+    "id": "j-secondary-size",
+    "suite": "judgement",
+    "description": "Fit consultancy outside the primary size band.",
+    "tags": [
+      "judgement"
+    ],
+    "input": {
+      "company_name": "Stonebridge Digital",
+      "domain": "stonebridge.example"
+    },
+    "corpus": {
+      "by_query": {},
+      "default": [
+        {
+          "url": "https://stonebridge.example/about",
+          "title": "About",
+          "content": "Stonebridge Digital is a founder-led HubSpot implementation consultancy. With 40 employees we deliver HubSpot rollouts for B2B companies."
+        }
+      ]
+    },
+    "pass_rate": 0.66,
+    "checks": [
+      {
+        "name": "employee_count_is",
+        "args": {
+          "value": 40
+        }
+      },
+      {
+        "name": "evidence_verified"
+      },
+      {
+        "name": "within_budget"
+      }
+    ]
+  },
+  {
+    "id": "j-vague-growing-team",
+    "suite": "judgement",
+    "description": "No number given: unknown over guess.",
+    "tags": [
+      "judgement"
+    ],
+    "input": {
+      "company_name": "Brightleaf Consulting",
+      "domain": "brightleaf.example"
+    },
+    "corpus": {
+      "by_query": {},
+      "default": [
+        {
+          "url": "https://brightleaf.example/about",
+          "title": "About",
+          "content": "Brightleaf Consulting is a founder-led HubSpot implementation consultancy with a fast growing team serving B2B SaaS companies."
+        }
+      ]
+    },
+    "pass_rate": 0.66,
+    "checks": [
+      {
+        "name": "employee_count_is",
+        "args": {
+          "value": null
+        }
+      },
+      {
+        "name": "evidence_verified"
+      },
+      {
+        "name": "within_budget"
+      }
+    ]
+  },
+  {
+    "id": "j-number-noise",
+    "suite": "judgement",
+    "description": "Years and project counts must not be read as headcount.",
+    "tags": [
+      "judgement"
+    ],
+    "input": {
+      "company_name": "Harborline Advisors",
+      "domain": "harborline.example"
+    },
+    "corpus": {
+      "by_query": {},
+      "default": [
+        {
+          "url": "https://harborline.example/about",
+          "title": "About",
+          "content": "Founded in 2012, Harborline Advisors is a founder-led HubSpot implementation consultancy. We have delivered 150 projects with a team of 14."
+        }
+      ]
+    },
+    "pass_rate": 0.66,
+    "checks": [
+      {
+        "name": "employee_count_is",
+        "args": {
+          "value": 14
+        }
+      },
+      {
+        "name": "evidence_verified"
+      },
+      {
+        "name": "within_budget"
+      }
+    ]
+  }
+]

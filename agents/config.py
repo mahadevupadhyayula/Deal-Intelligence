@@ -49,6 +49,17 @@ class Settings(BaseSettings):
     trace_redaction: bool = True
     injection_scan_enabled: bool = True
 
+    # --- Eval harness (Spec 007) ---
+    eval_default_repeats: int = 3
+    eval_concurrency: int = 2
+    eval_run_timeout_seconds: float = 120
+    eval_max_runs: int = 200  # hard spend cap per CLI invocation
+    eval_report_dir: str = "evals/reports"
+    # Cost estimate = calls x price. LangChain adapters do not surface token counts here, so a
+    # flat per-call price is the honest, configurable approximation.
+    eval_price_per_llm_call: float = 0.01
+    eval_price_per_search: float = 0.008
+
 
 @lru_cache
 def get_settings() -> Settings:

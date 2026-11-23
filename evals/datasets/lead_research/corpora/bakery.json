@@ -1,0 +1,15 @@
+{
+  "by_query": {},
+  "default": [
+    {
+      "url": "https://independent-baking.example/about",
+      "title": "About Independent Baking Co.",
+      "content": "Independent Baking Co. is a family-run artisan bakery in Portland, Oregon. We bake sourdough, croissants and seasonal pastries every morning and sell them at our shop and two farmers markets."
+    },
+    {
+      "url": "https://independent-baking.example/visit",
+      "title": "Visit us",
+      "content": "Open Tuesday to Sunday, 7am to 3pm. Wholesale orders for cafes are available on request. Our bakery employs a small team of bakers and counter staff."
+    }
+  ]
+}

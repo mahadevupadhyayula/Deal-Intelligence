@@ -1,0 +1,97 @@
+[
+  {
+    "segment_key": "primary-seg",
+    "body": {
+      "name": "Primary",
+      "rank": "primary",
+      "criteria": [
+        {
+          "id": "company-type",
+          "kind": "judged",
+          "label": "Company type",
+          "role": "scoring",
+          "weight": 6,
+          "rubric": "Is this a founder-led HubSpot implementation consultancy?",
+          "grade_hints": {
+            "ideal": "Founder-led consultancy focused on HubSpot implementation"
+          },
+          "non_match_examples": [
+            "In-house RevOps teams"
+          ]
+        },
+        {
+          "id": "enterprise-si",
+          "kind": "judged",
+          "label": "Enterprise SI",
+          "role": "disqualifier",
+          "rubric": "Is the company a large enterprise systems integrator?"
+        },
+        {
+          "id": "company-size",
+          "kind": "numeric",
+          "label": "Employees",
+          "role": "scoring",
+          "weight": 4,
+          "metric": "employee_count",
+          "bands": [
+            {
+              "grade": "ideal",
+              "min": 8,
+              "max": 20
+            },
+            {
+              "grade": "acceptable",
+              "min": 5,
+              "max": 30
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "segment_key": "secondary-seg",
+    "body": {
+      "name": "Secondary",
+      "rank": "secondary",
+      "criteria": [
+        {
+          "id": "company-type",
+          "kind": "judged",
+          "label": "Company type",
+          "role": "scoring",
+          "weight": 6,
+          "rubric": "Is this a founder-led HubSpot implementation consultancy?",
+          "grade_hints": {
+            "ideal": "Founder-led consultancy focused on HubSpot implementation"
+          },
+          "non_match_examples": [
+            "In-house RevOps teams"
+          ]
+        },
+        {
+          "id": "enterprise-si",
+          "kind": "judged",
+          "label": "Enterprise SI",
+          "role": "disqualifier",
+          "rubric": "Is the company a large enterprise systems integrator?"
+        },
+        {
+          "id": "company-size",
+          "kind": "numeric",
+          "label": "Employees",
+          "role": "scoring",
+          "weight": 4,
+          "metric": "employee_count",
+          "bands": [
+            {
+              "grade": "ideal",
+              "min": 31,
+              "max": 50
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

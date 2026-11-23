@@ -1,0 +1,6 @@
+[
+  {"company_name": "Example Fit Consultancy", "domain": "example-fit.example", "label": "fit",
+   "notes": "Founder-led HubSpot consultancy, 12 staff. Replace with a REAL company you have judged."},
+  {"company_name": "Example Non-Fit Co", "domain": "example-nonfit.example", "label": "not_fit",
+   "notes": "Enterprise SI or unrelated business. label is 'fit' or 'not_fit'."}
+]

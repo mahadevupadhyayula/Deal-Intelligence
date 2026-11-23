@@ -10,3 +10,7 @@ __pycache__/
 
 # OS
 .DS_Store
+
+# Eval harness (Spec 007): reports are local; the owner's labelled set may name real prospects
+evals/reports/
+evals/datasets/*/calibration/labelled_companies.json

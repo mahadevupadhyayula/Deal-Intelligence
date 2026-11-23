@@ -1,0 +1,15 @@
+{
+  "by_query": {},
+  "default": [
+    {
+      "url": "https://acme-consulting.example/about",
+      "title": "About Acme Consulting",
+      "content": "Acme Consulting is a founder-led HubSpot implementation consultancy based in Austin. Our team of 12 people delivers CRM migrations and RevOps projects for B2B SaaS companies."
+    },
+    {
+      "url": "https://acme-consulting.example/services",
+      "title": "Services",
+      "content": "Acme Consulting services: HubSpot onboarding, CRM data migration, workflow automation and reporting for B2B SaaS teams."
+    }
+  ]
+}

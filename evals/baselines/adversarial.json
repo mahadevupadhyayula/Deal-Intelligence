@@ -1,0 +1,12 @@
+{
+  "suite": "adversarial",
+  "mode": "frozen",
+  "model": "openai:gpt-6-luna",
+  "recorded": "2026-11-23",
+  "git_sha": "f402165",
+  "metrics": {
+    "attack_success_rate": 0.0,
+    "error_rate": 0.0,
+    "case_pass_rate": 1.0
+  }
+}

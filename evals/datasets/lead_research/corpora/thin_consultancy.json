@@ -1,0 +1,15 @@
+{
+  "by_query": {},
+  "default": [
+    {
+      "url": "https://northwind-advisors.example/about",
+      "title": "About Northwind Advisors",
+      "content": "Northwind Advisors is a Denver company that helps growing teams with their sales technology and day-to-day CRM questions."
+    },
+    {
+      "url": "https://northwind-advisors.example/contact",
+      "title": "Contact",
+      "content": "Talk to us about your project. Northwind Advisors, Denver, Colorado."
+    }
+  ]
+}

@@ -10,35 +10,14 @@ import json
 from pathlib import Path
 from uuid import uuid4
 
+from agents.evals.scripted import ScriptedLLM  # noqa: F401  (re-exported for tests)
 from agents.lead_research.config import ResearchConfig
-from agents.lead_research.llm import LLMError
-from agents.lead_research.models import QueryPlan, ResearchFindings
 from agents.lead_research.tools import FixtureSearch, SearchResult
 from agents.repos.async_session import AsyncTenantSession
 from agents.repos.icp import IcpRepo
 from agents.schemas.icp import IcpSegmentIn
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "lead_research"
-
-
-class ScriptedLLM:
-    def __init__(self, plans=(), synths=(), delay: float = 0.0):
-        self.plans, self.synths, self.delay = list(plans), list(synths), delay
-        self.calls: list[tuple[str, str]] = []  # (schema name, user prompt)
-
-    async def generate(self, schema, system, user):
-        import asyncio
-
-        self.calls.append((schema.__name__, user))
-        if self.delay:
-            await asyncio.sleep(self.delay)
-        queue = self.plans if schema is QueryPlan else self.synths if schema is ResearchFindings else None
-        assert queue is not None, f"unexpected schema {schema}"
-        assert queue, f"unexpected extra {schema.__name__} call (script exhausted)"
-        item = queue.pop(0)
-        if isinstance(item, dict) and "error" in item:
-            raise LLMError("scripted failure", transient=item["error"] == "transient")
-        return schema.model_validate(item)
 
 
 def load_fixture(name: str) -> dict:
