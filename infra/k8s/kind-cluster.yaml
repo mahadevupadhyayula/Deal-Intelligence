@@ -1,0 +1,11 @@
+# WHAT:  kind cluster definition for the local Kubernetes rehearsal (Spec 010).
+# WHERE:  Used by scripts/k8s_deploy.sh (`kind create cluster --config`).
+# WHY:    One control-plane node is enough on a laptop (11 CPUs / 8 GB shared with Docker). The node
+#         image is pinned so the cluster behaves the same next month; bump it deliberately. Nothing
+#         is published to the host: access is `kubectl port-forward` only (no ingress, no LB).
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: deal-intel
+nodes:
+  - role: control-plane
+    image: kindest/node:v1.34.0

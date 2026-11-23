@@ -77,8 +77,10 @@ def test_published_ports_are_localhost_only():
 def test_worker_is_scalable():
     w = SERVICES["worker"]
     assert "container_name" not in w and "ports" not in w
-    # enough for run_job to record a cancelled job; ARQ does not drain on SIGTERM (Spec 008 notes)
-    assert 10 <= int(w["stop_grace_period"].rstrip("s")) <= 60
+    # Spec 010: the worker drains, so the grace period must exceed the drain wait (job timeout).
+    from workers.settings import WorkerSettings
+    grace = int(re.search(r":-(\d+)s", w["stop_grace_period"]).group(1))
+    assert grace > WorkerSettings.job_completion_wait
 
 
 def test_redis_never_evicts_and_persists():

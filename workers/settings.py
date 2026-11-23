@@ -73,3 +73,7 @@ class WorkerSettings:
     max_tries = 1
     # Lets `arq --check` (the container healthcheck) see a fresh heartbeat; the default is hourly.
     health_check_interval = 30
+    # Spec 010: on SIGTERM stop picking jobs and let running ones finish (instead of cancelling
+    # them), so a KEDA scale-down or a deploy never fails work in flight. Whatever is still
+    # running after this many seconds is cancelled and recorded failed by run_job (Spec 008).
+    job_completion_wait = _settings.job_timeout_seconds

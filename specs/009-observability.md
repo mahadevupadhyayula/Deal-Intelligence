@@ -129,3 +129,5 @@ All five recommendations were approved: (1) Prometheus + Grafana as an opt-in pr
 - **Library loggers:** `configure_logging` routes uvicorn/arq loggers through the JSON handler; the API runs with `--no-access-log` because the app's middleware writes the structured access line. Probes (`/healthz`, `/readyz`) log at DEBUG.
 - **Smoke-script findings (test bugs, not product bugs):** the first run showed rate-limit counters are per tenant per minute and shared with earlier steps (step 4 now uses a fresh tenant), `docker ps` lists `expose`d ports without a host mapping (check `:910x->`), and mval normalises `5.0` to `5`.
 - **Known limits:** the fixed-window rate limiter can straddle a minute boundary, so the `rate` assertion is `>= 1`. Real token-based cost, OpenTelemetry, alert rules and log shipping remain out of scope as drafted.
+
+- **Superseded by Spec 010:** the worker now drains on SIGTERM, so `scripts/observability_smoke.sh` step 6 asserts a mid-job stop *succeeds* (and logs `job.finished status=succeeded`); the `cancelled` path is still covered by the unit test.

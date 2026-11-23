@@ -1,0 +1,57 @@
+# WHAT:  Ingress rules for the in-cluster datastores (and the one-off admin task pods).
+# WHERE:  Local overlay; pairs with the default-deny policy in base/app.
+# WHY:    Postgres accepts only api, worker, the migrate Job and operator `admin-task` pods;
+#         Redis only api and worker. Everything else (including a stray pod in the namespace)
+#         is refused, which is what the Gate 3 enforcement check probes. Egress for these
+#         workloads is denied by default-deny and they need none.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: postgres, namespace: deal-intel}
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: postgres}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {app.kubernetes.io/name: api}
+        - podSelector:
+            matchLabels: {app.kubernetes.io/name: worker}
+        - podSelector:
+            matchLabels: {app.kubernetes.io/name: migrate}
+        - podSelector:
+            matchLabels: {app.kubernetes.io/name: admin-task}
+      ports:
+        - {protocol: TCP, port: 5432}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: redis, namespace: deal-intel}
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: redis}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {app.kubernetes.io/name: api}
+        - podSelector:
+            matchLabels: {app.kubernetes.io/name: worker}
+      ports:
+        - {protocol: TCP, port: 6379}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: allow-admin-egress-postgres, namespace: deal-intel}
+spec:
+  # The migrate Job and operator `admin-task` pods run as the superuser and need Postgres only.
+  podSelector:
+    matchExpressions:
+      - {key: app.kubernetes.io/name, operator: In, values: [migrate, admin-task]}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels: {app.kubernetes.io/name: postgres}
+      ports:
+        - {protocol: TCP, port: 5432}

@@ -65,6 +65,11 @@ class Settings(BaseSettings):
     price_per_search: float = Field(0.008, validation_alias=AliasChoices(
         "PRICE_PER_SEARCH", "EVAL_PRICE_PER_SEARCH"))
 
+    # --- Stale-job reaper (Spec 010) ---
+    reaper_enabled: bool = True
+    reaper_interval_seconds: float = 60
+    reaper_max_age_seconds: float | None = None  # None -> job_timeout_seconds + 120
+
     # --- Eval harness (Spec 007) ---
     eval_default_repeats: int = 3
     eval_concurrency: int = 2

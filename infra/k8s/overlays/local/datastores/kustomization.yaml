@@ -1,0 +1,7 @@
+# Local-only datastores. Applied and awaited before migrations. See postgres.yaml / redis.yaml.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - postgres.yaml
+  - redis.yaml
+  - networkpolicies.yaml

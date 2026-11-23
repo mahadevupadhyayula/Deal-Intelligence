@@ -119,7 +119,7 @@ SUCC=$(psql_admin "SELECT count(*) FROM jobs WHERE tenant_id='smoke-a' AND paylo
 TENANT_MAX_ACTIVE_JOBS=10 dc up -d --no-deps --force-recreate --wait api >/dev/null 2>&1
 dc up -d --scale worker=1 --wait worker >/dev/null 2>&1
 
-echo "== 7. worker stop with a job in flight (SIGTERM behaviour is recorded, not assumed)"
+echo "== 7. worker stop with a job in flight (Spec 010: SIGTERM drains, the job finishes)"
 ECHO_MAX_DELAY_SECONDS=20 dc up -d --no-deps --force-recreate --wait worker >/dev/null 2>&1
 read -r CODE SLOW <<<"$(submit "$KEY_A" '{"kind":"echo","payload":{"delay_seconds":15}}')"
 wait_job "$KEY_A" "$SLOW" 20 running && ok "slow job is running" || bad "slow job never started"
@@ -127,7 +127,7 @@ T1=$SECONDS; dc stop worker >/dev/null 2>&1; STOP_SECS=$((SECONDS-T1))
 FINAL=$(job_status "$KEY_A" "$SLOW")
 ERR=$(curl -s -H "Authorization: Bearer $KEY_A" "$API/v1/jobs/$SLOW" | jq -r '.error // ""')
 echo "INFO  worker stop took ${STOP_SECS}s; in-flight job status: $FINAL; error: $ERR"
-[ "$FINAL" = "failed" ] && echo "$ERR" | grep -q "worker stopped" && ok "SIGTERM cancels the in-flight job and it is recorded failed (not stranded in running)" || bad "in-flight job ended as '$FINAL' ($ERR)"
+[ "$FINAL" = "succeeded" ] && ok "SIGTERM drains: the in-flight job finished and succeeded (stop took ${STOP_SECS}s)" || bad "in-flight job ended as '$FINAL' ($ERR)"
 dc up -d --force-recreate --wait worker >/dev/null 2>&1
 
 echo "== 8. secret hygiene"

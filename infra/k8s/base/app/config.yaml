@@ -1,0 +1,30 @@
+# WHAT:  Non-secret configuration shared by api and worker (same variable names as Compose).
+# WHERE:  Injected with envFrom into api.yaml and worker.yaml.
+# WHY:    The environment contract from Spec 008 is unchanged; only its source differs. Anything
+#         sensitive (database URL with password, LOG_HASH_KEY, provider keys) is in a Secret
+#         created at deploy time and is deliberately absent here. REDIS_URL carries no password
+#         locally, so it is plain config. ECHO_MAX_DELAY_SECONDS is 0 (disabled); the smoke test
+#         raises it temporarily to watch scaling with free jobs.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: deal-intel
+data:
+  APP_ENV: local
+  REDIS_URL: redis://redis:6379/0
+  LOG_FORMAT: json
+  LOG_LEVEL: INFO
+  METRICS_BIND_HOST: 0.0.0.0
+  API_METRICS_PORT: "9101"
+  WORKER_METRICS_PORT: "9100"
+  RATE_LIMIT_JOBS_PER_MINUTE: "30"
+  TENANT_MAX_ACTIVE_JOBS: "10"
+  TENANT_DAILY_MAX_LLM_CALLS: "500"
+  TENANT_DAILY_MAX_SEARCHES: "500"
+  JOB_TIMEOUT_SECONDS: "300"
+  PRICE_PER_LLM_CALL: "0.01"
+  PRICE_PER_SEARCH: "0.008"
+  ECHO_MAX_DELAY_SECONDS: "0"
+  REAPER_ENABLED: "true"
+  REAPER_INTERVAL_SECONDS: "60"

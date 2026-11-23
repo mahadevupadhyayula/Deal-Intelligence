@@ -1,0 +1,76 @@
+# WHAT:  The ARQ worker Deployment (replicas managed by KEDA, starting at 0) and its metrics Service.
+# WHERE:  Part of infra/k8s/base/app; scaled by scaledobject.yaml.
+# WHY:    * `replicas: 0`: idle cost is zero; KEDA brings workers up on queue backlog.
+#         * `terminationGracePeriodSeconds: 330` > JOB_TIMEOUT_SECONDS (300) + margin: on SIGTERM
+#           the worker drains (WorkerSettings.job_completion_wait) and finishes running jobs, so a
+#           scale-down never fails work in flight. If it were shorter, the kubelet would SIGKILL a
+#           job mid-drain and the reaper would have to clean up.
+#         * Provider keys come from `provider-secrets` (optional: a worker without research
+#           credentials still runs `echo` jobs); the admin database URL is never mounted here.
+#         * Liveness is ARQ's own heartbeat check (no port needed).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: deal-intel
+  labels: {app.kubernetes.io/name: worker, app.kubernetes.io/part-of: deal-intelligence}
+spec:
+  replicas: 0
+  selector:
+    matchLabels: {app.kubernetes.io/name: worker}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: worker, app.kubernetes.io/part-of: deal-intelligence}
+    spec:
+      serviceAccountName: worker
+      automountServiceAccountToken: false
+      # Service links inject vars like WORKER_METRICS_PORT=tcp://ip:9100 that COLLIDE with our own
+      # settings names (found in the first deploy: pydantic could not parse them). Off, always.
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 330
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: worker
+          image: deal-intelligence:local
+          command: ["arq", "workers.settings.WorkerSettings"]
+          ports:
+            - {name: metrics, containerPort: 9100}
+          envFrom:
+            - configMapRef: {name: app-config}
+            - secretRef: {name: app-secrets}
+            - secretRef: {name: provider-secrets, optional: true}
+          livenessProbe:
+            exec:
+              command: ["arq", "--check", "workers.settings.WorkerSettings"]
+            initialDelaySeconds: 40
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 250m, memory: 256Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            capabilities: {drop: ["ALL"]}
+            seccompProfile: {type: RuntimeDefault}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker-metrics
+  namespace: deal-intel
+spec:
+  selector: {app.kubernetes.io/name: worker}
+  ports:
+    - {name: metrics, port: 9100, targetPort: metrics}

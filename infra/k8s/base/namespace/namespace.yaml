@@ -1,0 +1,14 @@
+# WHAT:  The `deal-intel` namespace with Pod Security Admission set to `restricted`.
+# WHERE:  Applied first by scripts/k8s_deploy.sh; everything else lives inside it.
+# WHY:    PSA `restricted` makes the cluster itself reject any pod that runs as root, escalates
+#         privileges or keeps capabilities, so hardening cannot silently regress. `enforce` (not
+#         just warn) is the point: a bad manifest fails to deploy.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: deal-intel
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    app.kubernetes.io/part-of: deal-intelligence

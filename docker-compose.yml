@@ -172,10 +172,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    # Observed in the Spec 008 smoke test: on SIGTERM ARQ cancels the in-flight job immediately
-    # (it does not drain), and run_job records it as failed ("worker stopped...; resubmit").
-    # A short grace period is enough for that bookkeeping; true draining is a Spec 010 item.
-    stop_grace_period: 30s
+    # Spec 010: the worker drains on SIGTERM (WorkerSettings.job_completion_wait = JOB_TIMEOUT_SECONDS):
+    # it stops picking jobs and lets running ones finish. The grace period must exceed that wait
+    # (default 300s + 30s), otherwise Docker would SIGKILL a job mid-drain. Anything still running
+    # after the wait is cancelled and recorded failed by run_job (Spec 008).
+    stop_grace_period: ${WORKER_STOP_GRACE:-330s}
     deploy:
       resources:
         limits:

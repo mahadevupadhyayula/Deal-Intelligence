@@ -22,7 +22,7 @@ _KINDS = frozenset(JOB_KINDS)
 _STATUSES = frozenset({"succeeded", "failed", "cancelled"})
 _PROVIDERS = frozenset({"llm", "search"})
 _REASONS = frozenset({"rate", "active_cap", "daily_quota", "payload"})
-_SCRAPE = frozenset({"queue_read", "instrumentation", "http"})
+_SCRAPE = frozenset({"queue_read", "instrumentation", "http", "reaper"})
 _METHODS = frozenset({"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"})
 _STATUS_CLASSES = frozenset({"2xx", "3xx", "4xx", "5xx"})
 _DURATION_BUCKETS = (0.05, 0.1, 0.5, 1, 2, 5, 10, 30, 60, 120, 300)
@@ -45,6 +45,7 @@ HTTP_DURATION = Histogram("di_http_request_duration_seconds", "HTTP latency",
                           ["method", "route"], buckets=_HTTP_BUCKETS, registry=REGISTRY)
 SCRAPE_ERRORS = Counter("di_scrape_errors_total", "Instrumentation failures", ["reason"],
                         registry=REGISTRY)
+REAPED = Counter("di_reaped_jobs_total", "Jobs failed by the stale-job reaper", registry=REGISTRY)
 WORKER_UP = Gauge("di_worker_up", "1 while the worker process is alive", registry=REGISTRY)
 
 
@@ -88,6 +89,11 @@ def count_provider_calls(provider: str, n: int, unit_price: float) -> None:
     if n > 0:
         PROVIDER_CALLS.labels(provider).inc(n)
         ESTIMATED_COST.labels(provider).inc(n * unit_price)
+
+
+@_safe
+def count_reaped() -> None:
+    REAPED.inc()
 
 
 @_safe

@@ -1,0 +1,10 @@
+# The application workloads (api, worker, scaler, policies). Overlays set the image and datastores.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - serviceaccounts.yaml
+  - config.yaml
+  - api.yaml
+  - worker.yaml
+  - scaledobject.yaml
+  - networkpolicies.yaml

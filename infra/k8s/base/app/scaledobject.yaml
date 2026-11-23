@@ -1,0 +1,39 @@
+# WHAT:  KEDA ScaledObject: scale the worker Deployment between 0 and 5 on outstanding jobs.
+# WHERE:  Part of infra/k8s/base/app; requires the KEDA add-on (infra/k8s/keda/README.md).
+# WHY:    * Signal: `di_queue_outstanding` (waiting + running jobs) from the API's metrics port,
+#           via the `metrics-api` scaler. KEDA's `redis` scaler cannot read ARQ's sorted set.
+#           Running jobs are included because they occupy a worker; scaling on waiting alone would
+#           flap (a busy worker with an empty queue would look idle).
+#         * targetValue 2: about two outstanding jobs per worker (placeholder, tune with load).
+#         * `fallback`: if the metric source is unreachable (API down) keep one worker instead of
+#           silently stalling the queue.
+#         * Scale-down: a 30 s stabilisation window keeps the rehearsal quick; correctness comes
+#           from the worker draining on SIGTERM, not from the timing.
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: worker
+  namespace: deal-intel
+spec:
+  scaleTargetRef:
+    name: worker
+  minReplicaCount: 0
+  maxReplicaCount: 5
+  pollingInterval: 5
+  cooldownPeriod: 60
+  fallback:
+    failureThreshold: 3
+    replicas: 1
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 30
+  triggers:
+    - type: metrics-api
+      metricType: AverageValue
+      metadata:
+        url: http://api-metrics.deal-intel.svc.cluster.local:9101/metrics
+        format: prometheus
+        valueLocation: di_queue_outstanding
+        targetValue: "2"

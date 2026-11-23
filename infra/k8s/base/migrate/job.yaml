@@ -1,0 +1,50 @@
+# WHAT:  One-shot Job that applies database migrations as the admin role.
+# WHERE:  Run by scripts/k8s_deploy.sh after Postgres is ready and before api/worker are applied.
+# WHY:    A Job (not an init container) so N replicas do not each migrate and a failed migration
+#         blocks the deploy instead of crash-looping pods. It is the ONLY workload given
+#         `admin-secrets` (superuser URL, app_user password), mirroring Compose. The runner holds
+#         an advisory lock, so even accidental parallel runs are safe. Jobs are immutable, so the
+#         deploy script deletes the previous one first.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+  namespace: deal-intel
+  labels: {app.kubernetes.io/name: migrate, app.kubernetes.io/part-of: deal-intelligence}
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: migrate, app.kubernetes.io/part-of: deal-intelligence}
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      # Service links inject vars like WORKER_METRICS_PORT=tcp://ip:9100 that COLLIDE with our own
+      # settings names (found in the first deploy: pydantic could not parse them). Off, always.
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: migrate
+          image: deal-intelligence:local
+          command: ["python", "-m", "agents.migrate"]
+          envFrom:
+            - secretRef: {name: admin-secrets}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            capabilities: {drop: ["ALL"]}
+            seccompProfile: {type: RuntimeDefault}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: tmp
+          emptyDir: {}

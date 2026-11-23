@@ -1,0 +1,5 @@
+# The migration Job on its own, so it can be applied (and awaited) before the app. See job.yaml.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - job.yaml

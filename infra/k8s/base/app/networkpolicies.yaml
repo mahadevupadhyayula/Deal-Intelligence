@@ -1,0 +1,90 @@
+# WHAT:  Default-deny network policy plus the minimum allow rules between the workloads.
+# WHERE:  Part of infra/k8s/base/app (policies for postgres/redis are in the local overlay).
+# WHY:    Only api and worker may reach Postgres/Redis; only KEDA (namespace `keda`) and labelled
+#         scrapers may reach the metrics ports; only the worker may reach the internet (provider
+#         APIs, 443, never private ranges). `kubectl port-forward` is not affected by policies,
+#         so developers still reach the API. NOTE: kind's default CNI may not enforce these; the
+#         Gate 3 smoke test measures it and the result is recorded in the spec notes.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: default-deny, namespace: deal-intel}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: allow-dns, namespace: deal-intel}
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: kube-system}
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: api, namespace: deal-intel}
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: api}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {di/client: "true"}
+      ports:
+        - {protocol: TCP, port: 8000}
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: keda}
+        - podSelector:
+            matchLabels: {di/scraper: "true"}
+      ports:
+        - {protocol: TCP, port: 9101}
+  egress:
+    - to:
+        - podSelector:
+            matchLabels: {app.kubernetes.io/name: postgres}
+      ports:
+        - {protocol: TCP, port: 5432}
+    - to:
+        - podSelector:
+            matchLabels: {app.kubernetes.io/name: redis}
+      ports:
+        - {protocol: TCP, port: 6379}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: worker, namespace: deal-intel}
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: worker}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {di/scraper: "true"}
+      ports:
+        - {protocol: TCP, port: 9100}
+  egress:
+    - to:
+        - podSelector:
+            matchLabels: {app.kubernetes.io/name: postgres}
+      ports:
+        - {protocol: TCP, port: 5432}
+    - to:
+        - podSelector:
+            matchLabels: {app.kubernetes.io/name: redis}
+      ports:
+        - {protocol: TCP, port: 6379}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16]
+      ports:
+        - {protocol: TCP, port: 443}

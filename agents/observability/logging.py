@@ -87,7 +87,9 @@ class JsonFormatter(logging.Formatter):
 
 _OWNED = "_di_handler"
 # Libraries that install their own handlers: route them through ours instead.
-_LIBRARY_LOGGERS = ("uvicorn", "uvicorn.error", "uvicorn.access", "arq", "arq.worker", "arq.jobs",
+# `uvicorn.access` is deliberately NOT routed: the API runs with --no-access-log (our middleware
+# writes the structured access line) and re-enabling propagation would resurrect probe noise.
+_LIBRARY_LOGGERS = ("uvicorn", "uvicorn.error", "arq", "arq.worker", "arq.jobs",
                     "arq.connections")
 
 

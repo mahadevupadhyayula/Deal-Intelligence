@@ -6,6 +6,7 @@ WHY: A factory with injectable pool/arq lets tests substitute fakes while produc
 lifespan-managed singletons (one pool per process, never per-request connections).
 Injected resources are owned by the caller and not closed here.
 """
+import asyncio
 import logging
 import time
 import uuid
@@ -22,6 +23,7 @@ from agents.guardrails.redact import install_log_redaction
 from agents.observability import metrics
 from agents.observability.logging import bind_context, clear_context, configure_logging, log_event
 from agents.observability.queue import QueueCollector
+from api.reaper import reaper_loop
 from api.routes import health, icp, jobs, leads
 
 _log = logging.getLogger("api.access")
@@ -80,7 +82,11 @@ def create_app(pool: AsyncConnectionPool | None = None, arq=None,
         if own_arq:
             app.state.arq = await create_pool(RedisSettings.from_dsn(settings.redis_url))
         metrics_server = _start_metrics(settings)
+        reaper = (asyncio.create_task(reaper_loop(app.state.pool, settings))
+                  if settings.reaper_enabled else None)
         yield
+        if reaper is not None:
+            reaper.cancel()
         if metrics_server is not None:
             metrics_server.shutdown()
         if own_pool:

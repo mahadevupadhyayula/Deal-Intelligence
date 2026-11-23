@@ -105,3 +105,5 @@ The container reads configuration only from environment variables (the same `pyd
 2. **Still open (follow-ups):** (a) a hard kill (SIGKILL/OOM) cannot be caught, so a reaper for stale `running` jobs is needed (cross-tenant maintenance needs an admin-role task or a SECURITY DEFINER function, so it is its own design); (b) true draining on shutdown (stop taking jobs, let the current one finish) matters for KEDA scale-down in Spec 010, because every scale-down currently wastes the in-flight LLM run.
 
 **Measured:** image size 506 MB (runtime) / 507 MB (tools); first build including base-image pulls about a minute; the full smoke run takes about two minutes. Base image: `python:3.11-slim-bookworm` (tag pinned; digest not pinned, noted for Spec 011).
+
+- **Superseded by Spec 010:** SIGTERM no longer cancels the in-flight job; the worker drains (`job_completion_wait`), `stop_grace_period` is 330 s, and smoke step 7 now asserts the job succeeds. The cancel handling in `run_job` remains as the fallback after the wait.

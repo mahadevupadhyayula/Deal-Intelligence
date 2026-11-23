@@ -35,7 +35,7 @@ All agents are LangGraph graphs run inside ARQ workers. Every run is keyed by `t
 
 ```
 Route53/ALB ─▶ EKS: api (FastAPI, HPA)
-                    workers (ARQ + LangGraph, KEDA ScaledObject on Redis queue depth)
+                    workers (ARQ + LangGraph, KEDA ScaledObject on the `di_queue_outstanding` gauge via the `metrics-api` scaler; KEDA's `redis` scaler cannot read ARQ's sorted set)
                     frontend (Streamlit)
             ├─ RDS PostgreSQL (pgvector, PostgresSaver tables)
             ├─ ElastiCache Redis (ARQ)  [SQS optional]
@@ -63,6 +63,6 @@ Each agent ships as a slice: **build → harden → evaluate → deploy (local) 
 
 ### Deployment path
 1. Docker Compose full stack (Spec 008, **done**: one hardened image, `docker-compose.yml`, `scripts/compose_smoke.sh`, runbook in `docs/local-stack.md`) and observability (Spec 009, **done**: JSON logs correlated by `job_id` with hashed tenant ids, fleet-level Prometheus metrics incl. queue depth/oldest age for KEDA, optional Prometheus+Grafana profile, LangSmith run metadata; see `docs/local-stack.md`).
-2. Local Kubernetes with KEDA on a laptop (Spec 010): no cloud cost.
+2. Local Kubernetes (kind) with KEDA on a laptop (Spec 010, **done** once verified; see `docs/k8s-local.md`): scale-from-zero, drain on scale-down, a stale-job reaper; no cloud cost.
 3. Terraform validated with `terraform plan` only (Spec 011): the AWS design above is written and checked, not applied.
 4. A real AWS `apply` is a separate, optional spec once the owner chooses to spend.

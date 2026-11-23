@@ -1,0 +1,12 @@
+# Local overlay for the app: use the image loaded into kind. Spec 011's AWS overlay will instead
+# point `images` at ECR and not deploy the datastores.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../base/app
+patches:
+  - target: {kind: Deployment, name: "api|worker"}
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: IfNotPresent

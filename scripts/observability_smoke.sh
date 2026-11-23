@@ -3,7 +3,7 @@
 #        `observability` profile and asserts: JSON log lines correlated by job_id, no raw tenant
 #        id or secret in logs, internal-only metrics ports, queue-depth and oldest-age gauges
 #        (the signal KEDA will scale on), job counters, each admission-rejection reason,
-#        Prometheus scraping api and worker, the cancelled-job log line, and Grafana provisioning.
+#        Prometheus scraping api and worker, the drain-on-stop behaviour, and Grafana provisioning.
 #        Uses only free `echo` jobs: no provider spend.
 # WHERE: Run from the repo root: `bash scripts/observability_smoke.sh [--keep]`. Needs Docker,
 #        jq, and a `.env` with POSTGRES_PASSWORD, APP_USER_PASSWORD, LOG_HASH_KEY and
@@ -117,12 +117,13 @@ echo "== 5. Prometheus scrapes api and worker"
 wait_for 40 bash -c "[ \"\$(curl -s '$PROM/api/v1/query?query=sum(up)' | jq -r '.data.result[0].value[1]')\" = 2 ]" && ok "Prometheus: api and worker targets are up" || bad "prometheus targets not both up"
 [ "$(curl -s "$PROM/api/v1/query?query=sum(di_queue_depth)" | jq -r '.data.result | length')" = "1" ] && ok "Prometheus answers sum(di_queue_depth)" || bad "no queue depth in prometheus"
 
-echo "== 6. cancelled job is observable"
+echo "== 6. a worker stopped mid-job drains (Spec 010) and the outcome is observable"
 read -r C SLOW <<<"$(submit "$KEY" '{"kind":"echo","payload":{"delay_seconds":20}}')"
 wait_for 30 bash -c "[ \"\$(curl -s -H 'Authorization: Bearer $KEY' $API/v1/jobs/$SLOW | jq -r .status)\" = running ]" || bad "slow job never started"
 dc stop worker >/dev/null 2>&1
-dc logs --no-log-prefix worker 2>/dev/null | jq -R 'fromjson? | select(.job_id=="'"$SLOW"'" and .msg=="job.finished" and .status=="cancelled" and .error_type=="CancelledError")' | grep -q cancelled \
-  && ok "SIGTERM mid-job logs job.finished status=cancelled (the counter dies with the process; logs persist)" || bad "no cancelled log line"
+[ "$(job_status "$KEY" "$SLOW")" = "succeeded" ] && ok "SIGTERM drained: the running job finished and succeeded" || bad "job ended $(job_status "$KEY" "$SLOW")"
+dc logs --no-log-prefix worker 2>/dev/null | jq -R 'fromjson? | select(.job_id=="'"$SLOW"'" and .msg=="job.finished" and .status=="succeeded")' | grep -q succeeded \
+  && ok "job.finished status=succeeded was logged during the drain" || bad "no job.finished line for the drained job"
 dc start worker >/dev/null 2>&1
 
 echo "== 7. Grafana provisioning"

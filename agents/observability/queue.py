@@ -30,6 +30,11 @@ class QueueStats:
     in_flight: int
     oldest_age_seconds: float
 
+    @property
+    def outstanding(self) -> int:
+        """Waiting + running: the signal KEDA scales workers on (Spec 010)."""
+        return self.depth + self.in_flight
+
 
 def queue_stats(redis, now_ms: float | None = None) -> QueueStats:
     """`redis` is a sync client (decode_responses=False or True both work)."""
@@ -67,6 +72,8 @@ class QueueCollector:
         for name, doc, val in (
             ("di_queue_depth", "Jobs waiting for a worker", st.depth),
             ("di_queue_in_flight", "Jobs currently running", st.in_flight),
+            ("di_queue_outstanding", "Waiting plus running jobs (KEDA scaling signal)",
+             st.outstanding),
             ("di_queue_oldest_age_seconds", "Age of the oldest waiting job", st.oldest_age_seconds),
         ):
             g = GaugeMetricFamily(name, doc)

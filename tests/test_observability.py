@@ -336,6 +336,7 @@ def test_queue_stats_empty_waiting_and_in_flight():
     # `a` is running: it stays in ARQ's zset until finished, but is not waiting.
     st = queue_stats(FakeRedis(q, in_progress={"a"}), now_ms=11_000)
     assert (st.depth, st.in_flight) == (2, 1) and st.oldest_age_seconds == 9
+    assert st.outstanding == 3  # waiting + running: what KEDA scales on
 
 
 def test_queue_collector_omits_gauges_and_counts_error_when_redis_is_down():
@@ -343,7 +344,8 @@ def test_queue_collector_omits_gauges_and_counts_error_when_redis_is_down():
     assert list(QueueCollector(FakeRedis(fail=True)).collect()) == []
     assert val("di_scrape_errors_total", reason="queue_read") == e0 + 1
     names = {m.name for m in QueueCollector(FakeRedis([("a", 1)])).collect()}
-    assert names == {"di_queue_depth", "di_queue_in_flight", "di_queue_oldest_age_seconds"}
+    assert names == {"di_queue_depth", "di_queue_in_flight", "di_queue_outstanding",
+                     "di_queue_oldest_age_seconds"}
 
 
 def test_log_event_carries_fields():
@@ -387,3 +389,7 @@ def test_observability_profile_and_secret_wiring():
             assert "LANGSMITH_API_KEY" not in svc.get("environment", {}), name
     assert "--no-access-log" in SVC["api"]["command"]
     assert "LOG_HASH_KEY=" not in (ROOT / "docker-compose.yml").read_text()
+
+
+def test_uvicorn_access_logger_is_left_disabled_for_no_access_log():
+    assert "uvicorn.access" not in obs_log._LIBRARY_LOGGERS
